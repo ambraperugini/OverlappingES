@@ -27,8 +27,14 @@
     \end{center}
 }
 
+
 \begin{document}
 \maketitle
+
+\begin{abstract}
+\textbf{Summary}. Type your summary or abstract here, if desired. If there is none 
+or if this part is not relevant, then omit.
+\end{abstract}
 
 \section{Introduction}
 
