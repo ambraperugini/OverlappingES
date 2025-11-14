@@ -337,17 +337,36 @@ plot_grid( plotlist = GGlist, ncol = 2 )
 
 For each of the `r nrow(MUSI)` conditions we generated `r nrow(MUSI)*B` sets of data on which we performed the analysis. 
 
-## Effect sizes for comparison
-
 For each combination $ \delta \times \sigma \times \alpha \times n $, on the generated data the following effect sizes are computed:
 
-- $\eta$ (non parametric overlap), 
+- Overlapping Index ($\eta$, non parametric overlap), 
 
-- OV (parametric overlap), 
+- Parametric Overlap (OV), 
 
-- Cohen's $d$ (between) 
+- Cohen's $d$ 
 
 - Common Language Effect Size (CLES).
+
+## Definition of Effect sizes
+
+***The Overlapping index***: 
+
+The Overlapping Index defines the area intersected by two or more empirical density functions [@pastore+calcagni:2019]. This index varies from zero (complete disjointment) to one (complete overlap) and can be considered an index of similarity between groups/conditions.
+
+Assuming two probability density functions $f_A (x)$ and $f_B (x)$, the Overlapping Index $\eta: \mathbb{R}^n \times \mathbb{R}^n \to [0,1] $ is formally defined in the following way:
+
+
+$$
+\eta (A,B) = \int_{\mathbb{R}^n} min [f_A (x),f_B (x)] dx
+$${#eq-eta}
+
+where, in the discrete case, the integer can be replaced by summation. $\eta (A,B)$ is normalized to one and when the distributions of A and B do not have points in common, meaning that $f_A (x)$ and $f_B (x)$ are disjoint, $\eta (A,B) = 0$.
+
+***Parametric Overlap***:
+
+***Cohen's d***
+
+***Common Language Effect Size***
 
 ## Performance Indexes
 
