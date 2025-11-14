@@ -218,9 +218,9 @@ DD <- data.frame(DESIGN)
 
 
 
-## The Simulation Study
+# The Simulation Study
 
-### Data Generation
+## Data Generation
 
 The simulation generates pairs of sets of data from density distributions in different scenarios.  
 The first distribution from which the data is generated is a normal standard with $\mu = 0$ and $\sigma = 1$. The second set of data is generated from the Skew-Normal distribution @azzalini:1985, which is defined in the following way: given $\xi \in \mathbb{R}$, $\omega \in \mathbb{R}^{+}$ and $\alpha \in \mathbb{R}$, then for $y \in \mathbb{R}$ we have
@@ -237,8 +237,7 @@ $$
            \alpha \left( \frac{y-\xi}{\omega\sqrt{2}} \right)
       \right)
     \right]
-$$
-{#eq:skewnormal}
+$${#eq-skewnormal}
 
 
 in which
@@ -280,7 +279,7 @@ $$ {#eq-xiomegaSN}
 
 The Skew-Normal distribution is optimal for our purpose as it allows us to have control over parameters of mean, variance, skewness and kurtosis.
 
-### Simulation design
+## Simulation design
 
 In the simulation we compare two samples drawn from Skew-Normal distributions. The first sample is always generated from $\mathcal{SN}(0,1,0)$, which corresponds to a Standard Normal distribution with mean 0 and variance 1. The second sample is generated from $\mathcal{SN}(\xi,\omega,\alpha)$, where the parameters are manipulated to produce specific differences in means ($\delta$), standard deviations ($\sigma$), and skewness ($\alpha$) between the two populations.
 
@@ -337,36 +336,38 @@ plot_grid( plotlist = GGlist, ncol = 2 )
 
 For each of the `r nrow(MUSI)` conditions we generated `r nrow(MUSI)*B` sets of data on which we performed the analysis. 
 
-For each combination $ \delta \times \sigma \times \alpha \times n $, on the generated data the following effect sizes are computed:
-
-- Overlapping Index ($\eta$, non parametric overlap), 
-
-- Parametric Overlap (OV), 
+For each combination $\delta\times\sigma\times\alpha\times n$, on the generated data the following effect sizes are computed:
 
 - Cohen's $d$ 
 
 - Common Language Effect Size (CLES).
 
+- Parametric Overlap (OV), 
+
+- Overlapping Index ($\eta$, non parametric overlap), 
+
+
 ## Definition of Effect sizes
 
-***The Overlapping index***: 
+**Cohen's d**:
+
+**Common Language Effect Size**:
+
+**Parametric Overlap**:
+
+**The Overlapping index**: 
 
 The Overlapping Index defines the area intersected by two or more empirical density functions [@pastore+calcagni:2019]. This index varies from zero (complete disjointment) to one (complete overlap) and can be considered an index of similarity between groups/conditions.
 
-Assuming two probability density functions $f_A (x)$ and $f_B (x)$, the Overlapping Index $\eta: \mathbb{R}^n \times \mathbb{R}^n \to [0,1] $ is formally defined in the following way:
+Assuming two probability density functions $f_A (x)$ and $f_B (x)$, the Overlapping Index $\eta: \mathbb{R}^n \times \mathbb{R}^n \to [0,1]$ is formally defined in the following way:
 
 
 $$
-\eta (A,B) = \int_{\mathbb{R}^n} min [f_A (x),f_B (x)] dx
+\eta(A,B) = \int_{\mathbb{R}^n} \min\{ f_A(x),\, f_B(x) \}\, dx
 $${#eq-eta}
 
 where, in the discrete case, the integer can be replaced by summation. $\eta (A,B)$ is normalized to one and when the distributions of A and B do not have points in common, meaning that $f_A (x)$ and $f_B (x)$ are disjoint, $\eta (A,B) = 0$.
 
-***Parametric Overlap***:
-
-***Cohen's d***
-
-***Common Language Effect Size***
 
 ## Performance Indexes
 
@@ -379,15 +380,16 @@ $1/B \sum_b (\hat{\theta}_{bj} - \theta_j)/\theta_j$. Relative bias values betwe
 
 - **Coverage**: the proportion of simulated datasets for which the confidence interval of the estimator contains the true parameter value.
 
-## Results
+# Results
 
 ```{r}
+#| echo: false
 ALL$true_cles <- true_CLES( ALL$true_d )
 ```
 
-### Descriptive statistics 
+## Descriptive statistics 
 
-Vediamo in dettaglio, le distribuzioni dei valori degli indici nelle `r nrow(DESIGN)` condizioni sperimentali.
+In @fig-correlations are shown in detail the distributions of the values of effect size indices in the `r nrow(DESIGN)` experimental conditions.
 
 
 ```{r}
@@ -410,9 +412,9 @@ ggpairs( GGR,
 
 
 
-### Indici di performance
+## Performance Indexes
 
-Per confrontare le performance calcoliamo le seguenti statistiche: 
+
  
 ```{r AMB, echo=FALSE}
 ALL$bias_d <- with( ALL, abs(Cohens_d - true_d) )
@@ -580,7 +582,7 @@ BIAS <- merge( BIAS, SB[,c("ind","n","mu","sigma","alpha","NRMSE")], by = c("ind
 
 ```
  
-Considerato che i tre indici non sono comparabili in senso assoluto, utilizziamo solo RMB (@fig-RMB) e NRMSE (@fig-NRMSE). Nel caso di quest'ultimo indice, aggiungiamo anche un secondo grafico (@fig-NRMSEa) in cui escludiamo Cles, che ha una performance molto perggiore degli altri.   
+To be able to compare the effect sizes despite the difference in scales, we focus only on RMB (@fig-RMB), NRMSE (@fig-NRMSE) and Coverage. For NRMSE, we also include a second plot (@fig-NRMSEa) in which CLES is excluded, as its performance is considerably worse than that of the other methods.
 
 
  
@@ -594,6 +596,21 @@ Considerato che i tre indici non sono comparabili in senso assoluto, utilizziamo
 ggplot( BIAS, aes( n, RMB, color = ind, shape = ind ) ) +
   theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
   geom_hline( yintercept = c(-.1,.1), lty = 3) +  
+  geom_point() + geom_line() + 
+  theme( legend.title = element_blank())
+
+
+```
+
+```{r}
+#| echo: false
+#| label: fig-NRMSE
+#| fig-width: 8
+#| fig-height: 4
+#| fig-cap: Normalized relative mean square error in funzione delle condizioni sperimentali. 
+#| 
+ggplot( BIAS, aes( n, NRMSE, color = ind, shape = ind ) ) +
+  theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
   geom_point() + geom_line() + 
   theme( legend.title = element_blank())
 
@@ -619,11 +636,8 @@ ggplot( subset( BIAS, ind != "cles" ), aes( n, NRMSE, color = ind, shape = ind )
 ```
 
 
-
-### Coverage
-
 ```{r}
-
+#| echo: false
 # per provare
 ALL$OV_low <- d_to_overlap( ALL$Cohen_low ) 
 ALL$OV_high <- d_to_overlap( ALL$Cohen_high ) 
@@ -667,17 +681,18 @@ ggplot( Y_coverage, aes( n, values, color = ind, shape = ind ) ) +
 
 ```
 
-Appare controintuitiva la performance di $\eta$ nella condizione $\mu = 2$, $\sigma = 1$, $\alpha = 10$, quindi vediamo, in @fig-x2110 la distribuzione dei valori stimati in questa condizione, in funzione di $n$.
-Se calcoliamo il valore vero via integrale, abbiamo:
-```{r, results='markup'}
 
+<!-- Appare controintuitiva la performance di $\eta$ nella condizione $\mu = 2$, $\sigma = 1$, $\alpha = 10$, quindi vediamo, in @fig-x2110 la distribuzione dei valori stimati in questa condizione, in funzione di $n$. -->
+<!-- Se calcoliamo il valore vero via integrale, abbiamo: -->
+```{r}
+#| echo: false
 pars <- sninvpar( mu = 2, sigma = 1, alpha = 10 )
 
 integrate( min_dskew_normal, -6, 6, 
            xi = pars$xi, omega = pars$omega, alpha = pars$alpha )
 
 ```
-Tale valore viene riportato in figura con linea orizzontale punteggiata. 
+<!-- Tale valore viene riportato in figura con linea orizzontale punteggiata.  -->
 
 ```{r}
 #| label: fig-x2110
@@ -702,243 +717,14 @@ ggplot( X_2_1_10, aes( factor(n), eta1 ) ) +
 
 ```
 
-## References 
+# References 
 
 ::: {#refs}
 :::
 
 
 
-\end{document}
 
-## END
-
-
-Ad esempio:
-
-- Con $\mu = 0$, $\sigma = 1$ e $\alpha = 0$; le due distribuzioni sono uguali:
-
-```{r, echo=FALSE, fig.width=6}
-GGlist[[1]] + theme_minimal()
-```
-
-```{r}
-#| echo: true
-#| results: markup
-
-# mu = 0, sigma = 1, alpha = 0
-integrate( min_dskew_normal, -6, 6 )
-(d <- true_cohen( 0, 0, 1, 1 ))
-true_CLES( d )
-
-```
-**Esempio empirico**
-
-```{r, echo=FALSE}
-library( sn )
-N <- 1e4
-y1 <- rsn( N )
-y2 <- rsn( N, xi = 0, omega = 1, alpha = 0 )
-Ysim <- data.frame( 
-  y = c( y1, y2 ), 
-  g = factor( paste0("y",rep(1:2, each = N) )) )
-
-```
-
-Proviamo con dei dati simulati ($n = `r N`$)
-
-```{r,echo=FALSE, fig.width=6}
-
-j <- 1
-ggplot(Ysim, aes( y, fill = g, color = g ) ) + 
-  theme_minimal() + geom_density( alpha = .4 ) +
-  theme( legend.title = element_blank() ) +
-  xlab("") + ylab("") + 
-    ggtitle(bquote(mu == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
-    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
-    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
-    ~ omega == .(round(DD$omega[j],2)) ) )
-
-
-```
-
-```{r, results='markup'}
-
-library( overlapping )
-overlap( list( y1, y2) )
-library( effectsize )
-p_overlap( y1, y2, ci = LEVEL )
-cohens_d( y1, y2, ci = LEVEL )
-CLES_IC( y1, y2 )$CLES
-
-```
-
-
-- Con $\mu = 2$, $\sigma = 1$ e $\alpha = 0$; le due distribuzioni hanno una differenza media di 1, ma essendo simmetriche, i parametri della SN sono uguali, $\xi = 2$ e $\omega = 1$:
-
-```{r, echo=FALSE, fig.width=6}
-GGlist[[2]] + theme_minimal()
-```
-
-
-```{r}
-#| echo: true
-#| results: markup
-
-# mu = 2, sigma = 1, alpha = 0
-integrate( min_dskew_normal, -6, 6, xi = 2, omega = 1 )
-(d <- true_cohen( 0, 2, 1, 1 ))
-true_CLES( d )
-
-```
-
-**Esempio empirico**
-
-```{r, echo=FALSE}
-y2 <- rsn( N, xi = 2, omega = 1, alpha = 0 )
-Ysim <- data.frame( 
-  y = c( y1, y2 ), 
-  g = factor( paste0("y",rep(1:2, each = N) )) )
-
-```
-
-```{r,echo=FALSE, fig.width=6}
-
-j <- 2
-ggplot(Ysim, aes( y, fill = g, color = g ) ) + 
-  theme_minimal() + geom_density( alpha = .4 ) +
-  theme( legend.title = element_blank() ) +
-  xlab("") + ylab("") + 
-    ggtitle(bquote(mu == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
-    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
-    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
-    ~ omega == .(round(DD$omega[j],2)) ) )
-
-
-```
-
-```{r, results='markup'}
-
-overlap( list( y1, y2) )
-p_overlap( y1, y2, ci = LEVEL )
-cohens_d( y1, y2, ci = LEVEL )
-CLES_IC( y1, y2 )$CLES
-
-```
-
-
-
-- Con $\mu = 2$, $\sigma = 1$ e $\alpha = 10$; le due distribuzioni hanno una sempre una differenza media di 1, ma la seconda è asimmetrica, quindi i parametri della SN sono diversi, $\xi = `r round(sninvpar( 2, 1, alpha = 10 )$xi,2)`$  e $\omega = `r round(sninvpar( 2, 1, alpha = 10 )$omega,2)`$:
-
-```{r, echo=FALSE, fig.width=6}
-GGlist[[6]] + theme_minimal()
-```
-
-```{r}
-#| echo: true
-#| results: markup
-
-# mu = 2, sigma = 1, alpha = 10
-pars <- sninvpar( 2, 1, alpha = 10 )
-integrate( min_dskew_normal, -6, 6, 
-           xi = pars$xi, omega = pars$omega, alpha = pars$alpha )
-(d <- true_cohen( 0, 2, 1, 1 ))
-true_CLES( d )
-
-```
-
-Notiamo che in questo caso, nonostante la forte asimmetria, Cohen's $d$ e Cles rimangono invariati, proprio perché nelle formule di calcolo si tiene conto solo di media e deviazione standard. 
-
-**Esempio empirico**
-
-```{r, echo=FALSE}
-y2 <- with( pars, rsn( N, xi = xi, omega = omega, alpha = alpha ) )
-Ysim <- data.frame( 
-  y = c( y1, y2 ), 
-  g = factor( paste0("y",rep(1:2, each = N) )) )
-
-```
-
-```{r,echo=FALSE, fig.width=6}
-
-j <- 6
-ggplot(Ysim, aes( y, fill = g, color = g ) ) + 
-  theme_minimal() + geom_density( alpha = .4 ) +
-  theme( legend.title = element_blank() ) +
-  xlab("") + ylab("") + 
-    ggtitle(bquote(mu == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
-    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
-    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
-    ~ omega == .(round(DD$omega[j],2)) ) )
-
-
-```
-
-
-```{r, results='markup'}
-
-overlap( list( y1, y2) )
-p_overlap( y1, y2, ci = LEVEL )
-cohens_d( y1, y2, ci = LEVEL )
-CLES_IC( y1, y2 )$CLES
-
-```
-
-Si nota che anche l'indice OV, stima bene il grado di sovrapposizione, nonostante la marcata asimmetria della seconda distribuzione. 
-
-
-
-# Results
-
-Nella @tbl-frequenze è riportato il numero di repliche per ciascuna combinazione di $\mu$, $\sigma$ e $\alpha$; tale numero va diviso per `r length(unique(ALL$n))`, ovvero il numero di combinazioni di $n$, per avere il numero effettivo di repliche per cella del disegno, ovvero `r B`.
-
-```{r, echo=FALSE}
-#| results: asis
-#| tbl-cap: Numero di repliche effettive per ciascuna combinazione di $\\mu$, $\\sigma$ e $\\alpha$.
-#| label: tbl-frequenze
-
-Ftab <- data.frame( table(ALL$mu,ALL$sigma,ALL$alpha, 
-              dnn = list( "mu","sigma", "alpha")    ) )
-kable( Ftab )
-
-```
-
-### Valori veri e stimati
-
-Prima di tutto analizziamo i valori veri dei tre indici presi in esame. Poiché manca `true_cles`, lo calcoliamo, a partire dai valori di `true_d`:
-
-```{r modelli sugli indici, results='markup', echo=FALSE}
-
-if (esegui) {
-  library( effectsize )
-  fit_cohen <- lm( Cohens_d ~ n*mu*sigma*alpha, data = ALL )
-  etasq_cohen <- eta_squared( fit_cohen, partial = FALSE )
-  ETA2 <- etasq_cohen[,c("Parameter","Eta2")] 
-  colnames(ETA2)[2] <- "cohen"
-
-  library( betareg )
-  fit_eta <- betareg( eta1 ~ n*mu*sigma*alpha, data = ALL )
-  fit_eta_null <- betareg( eta1 ~ 1, data = ALL )
-  ETA2$eta <- beta_deviance_diff( fit_eta, fit_eta_null )$Proportion_Deviance_Explained
-  
-  fit_cles <- betareg( Cles ~ n*mu*sigma*alpha, data = ALL )
-  fit_cles_null <- betareg( Cles ~ 1, data = ALL )
-  ETA2$cles <- beta_deviance_diff( fit_cles, fit_cles_null )$Proportion_Deviance_Explained
-  
-  fit_OV <- betareg( OV ~ n*mu*sigma*alpha, data = ALL )
-  fit_OV_null <- betareg( OV ~ 1, data = ALL )
-  ETA2$ov <- beta_deviance_diff( fit_OV, fit_OV_null )$Proportion_Deviance_Explained
-  
-  save( ETA2, file = paste0(datadir,"R02_etasquared.rda"))
-  
-} else {
-  load( paste0(datadir,"R02_etasquared.rda") )
-}
-
-
-
-
-```
 
 
 
