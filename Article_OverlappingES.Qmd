@@ -1,0 +1,925 @@
+---
+title: "Titolo Bellissimo: Comparison of effect sizes under non-normality scenarios"
+date: "`r Sys.Date()`"
+author: Ambra Perugini, Giulia Calignano, Massimiliano Pastore
+format: 
+  pdf:
+    papersize: a4
+    fontsize: 12pt
+    margin-left: 1in   # Adjust margins for binding
+    margin-right: 1in
+    toc: false            # Table of Contents
+    number-sections: true
+    colorlinks: true    
+    fontfamily: times
+editor: source
+self-contained: true
+bibliography: overlapping.bib
+csl: apa.csl
+---
+
+
+
+```{r, include=FALSE}
+
+library(knitr)
+opts_chunk$set(fig.width=3,fig.height=3,echo=TRUE,fig.lp="fig:",fig.align='center',prompt=FALSE,comment=NA,message=FALSE,fig.pos="!t",results="hide", cache=TRUE)
+
+```
+
+
+```{r init, echo=FALSE}
+rm(list=ls())
+INIZIO <- Sys.time()
+# +++++++++++++++++++++++++++++++++
+main <- "/Users/ambraperugini/Documents/Work/projects/OverlappingES/"
+if (grepl("cox",Sys.info()["user"])) main <- gsub("~","~/MEGA",main)
+datadir <- paste(main,"data/",sep="")
+Rdir <- paste(main,"Rcodes/",sep="")
+# KUtils::pulizia(paste(main,"knitr/",sep=""),c("Rnw","bib","Qmd","html","csl")) 
+esegui <- FALSE
+LEVEL <- .9
+PROBS <- c( (1-LEVEL)/2,1-(1-LEVEL)/2 )
+SEED <- 1
+
+```
+
+
+```{r functions, echo=FALSE}
+
+# +++++++++++++++++++++++++++++++++
+print_comma <- function( numero ) {
+  format(numero,big.mark=",")
+}
+
+# +++++++++++++++++++++++++++++++++
+snpar <- function(xi=0,omega=1,alpha=0) {
+  delta <- alpha/sqrt(1+alpha^2)
+  mu <- xi + omega * delta * sqrt( 2/pi )
+  sigma2 <- omega^2 * ( 1 - (2*delta^2)/pi )
+  return(list(mu = mu, sigma = sqrt(sigma2)))
+}
+
+# +++++++++++++++++++++++++++++++++
+sninvpar <- function( mu=0, sigma=1, xi=NULL, omega=NULL, alpha=0 ) {
+  if (is.null(omega)) {
+    delta <- alpha/sqrt(1+alpha^2)
+    omega2 <- sigma^2 / ( 1 - (2*delta^2) / pi )
+    omega <- sqrt( omega2 )
+  }
+  if (is.null(xi)) {
+    delta <- alpha/sqrt(1+alpha^2)
+    xi <- mu - omega * delta * sqrt( 2/pi )
+  }
+  return( list( xi = xi, omega = omega, alpha = alpha ) )
+}
+
+# +++++++++++++++++++++++++++++++++
+#' @name relative_mean_bias
+#' @param theta = valori stimati
+#' @param true_theta = valori veri 
+#' @param eps = piccolo valore per evitare la divisione per zero
+#' @param use_abs_for_zero = logico, se \code{TRUE}, quando \code{true_theta = 0} ritorna il bias assoluto
+relative_mean_bias <- function(theta, true_theta, eps = 1e-6, use_abs_for_zero = TRUE) {
+  bias <- theta - true_theta
+  
+  rmb <- ifelse(
+    true_theta == 0,
+    if (use_abs_for_zero) bias else bias / eps,   # gestione dei casi con 0
+    bias / true_theta
+  )
+  
+  return(rmb)
+}
+
+# +++++++++++++++++++++++++++++++++
+#' @name beta_deviance_diff
+#' @description Calcola le differenze la proporzione di devianza spiegata per ciascun effetto del modello target.
+#' @param fit = modello target
+#' @param fit_null = modello nullo 
+#' @param ordina = logical, se messo a \code{TRUE}, ordina la tabella di output
+beta_deviance_diff <- function( fit, fit_null, ordina = FALSE ) {
+  
+  require( betareg )
+  DD <- fit$model
+  
+# Calcola la devianza totale
+  total_deviance <- 2 * abs(fit_null$loglik - fit$loglik)
+  
+  # Funzione per calcolare la differenza di devianza
+  calc_deviance_diff <- function(term, full_model, data) {
+    reduced_formula <- update(full_model$formula, paste0(". ~ . - ", term))
+    reduced_model <- betareg(reduced_formula, data = data)
+    deviance_diff <- 2 * abs(reduced_model$loglik - full_model$loglik)
+    return(deviance_diff)
+  }
+  
+  # Calcola la differenza di devianza per ogni termine
+  terms <- attr(terms(fit), "term.labels")
+  deviance_diffs <- sapply(terms, calc_deviance_diff, 
+                           full_model = fit, data = DD)  
+  
+  # Calcola la proporzione di devianza spiegata
+  prop_deviance <- deviance_diffs / total_deviance
+  
+  # Crea un dataframe con i risultati
+  results <- data.frame(
+    Parameter = terms,
+    Deviance_Difference = deviance_diffs,
+    Proportion_Deviance_Explained = prop_deviance
+  )
+  
+  # Ordina i risultati per importanza decrescente
+  if (ordina) {
+    results <- results[order(-results$Proportion_Deviance_Explained), ]
+  }
+  
+  return( results )
+}
+
+# +++++++++++++++++++++++++++++++++
+CLES_IC <- function(x1, x2, alpha = .9, alternative = c("lower","greater") ) {
+  
+  alternative <- match.arg(alternative)
+  simbol <- ifelse(alternative == "lower", "<",">") 
+    
+  # Calcola l'indice CLES
+  n1 <- length(x1)
+  n2 <- length(x2)
+  
+  # Calcola il numero di confronti
+  confronti <- sum(outer(x1, x2, simbol))
+  
+  # Calcola CLES
+  CLES <- confronti / (n1 * n2)
+  
+  # Calcola la varianza
+  var_CLES <- (CLES * (1 - CLES)) / (n1 * n2)
+  
+  # Calcola l'intervallo di confidenza
+  Z <-  qnorm(1 - (1 - alpha) / 2) 
+  errore_standard <- sqrt(var_CLES)
+  
+  IC_lower <- CLES - Z * errore_standard
+  IC_upper <- CLES + Z * errore_standard
+  
+  # Restituisce i risultati
+  return(list(CLES = CLES, IC = c(IC_lower, IC_upper)))
+}
+
+```
+
+```{r}
+#| echo: false
+min_dskew_normal <- function( x = seq( -5, 5, by = .01 ), xi = 0, omega = 1, alpha = 0, 
+                              return.all = FALSE ) {
+  
+  require( sn )
+  y1 <- dsn( x, xi = 0, omega = 1, alpha = 0 )
+  y2 <- dsn( x, alpha = alpha, xi = xi, omega = omega )
+  dy <- ifelse( y1 < y2, y1, y2 )
+  gData <- data.frame( x, y1, y2, dy )  
+  
+  if (return.all) {
+    return( list( gData = gData ) )
+  } else {
+    return( dy )  
+  }
+}
+
+true_cohen <- function( mu1, mu2, sigma1, sigma2 ) {
+  pool.s <- sqrt( (sigma1^2 + sigma2^2) / 2 )
+  (mu1-mu2) / pool.s 
+}
+
+true_CLES <- function( true_d ) {
+  pnorm( abs(true_d) / sqrt(2) )
+} 
+
+
+```
+
+
+```{r, echo=FALSE}
+load( paste0(datadir, "exp2501.rda"))
+
+MUSI <- with( PARlist, expand.grid(mu=delta_vec, sigma=sigma_vec, alpha = alpha_vec) )
+
+DESIGN <- NULL 
+for (i in 1:nrow(MUSI)) {
+  DESIGN <- rbind( DESIGN, 
+                   unlist( with( MUSI, sninvpar(mu[i],sigma[i],alpha = alpha[i]) )) )
+}
+
+
+DD <- data.frame(DESIGN)
+
+```
+
+
+
+## The Simulation Study
+
+### Data Generation
+
+The simulation generates pairs of sets of data from density distributions in different scenarios.  
+The first distribution from which the data is generated is a normal standard with $\mu = 0$ and $\sigma = 1$. The second set of data is generated from the Skew-Normal distribution @azzalini:1985, which is defined in the following way: given $\xi \in \mathbb{R}$, $\omega \in \mathbb{R}^{+}$ and $\alpha \in \mathbb{R}$, then for $y \in \mathbb{R}$ we have
+
+
+$$
+\mathcal{SN}(y|\xi, \omega, \alpha)
+  = \frac{1}{\omega \sqrt{2\pi}}
+    \exp\left[
+       -\frac{1}{2}\left( \frac{y-\xi}{\omega} \right)^2
+    \right]
+    \left[
+      1 + \text{erf}\left(
+           \alpha \left( \frac{y-\xi}{\omega\sqrt{2}} \right)
+      \right)
+    \right]
+$$
+{#eq:skewnormal}
+
+
+in which
+
+ 
+$$
+\text{erf}(z)
+  = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2}\, dt
+$$ {#eq-erf}
+
+
+is the *error function*.
+
+$\xi$ is the location parameter, $\omega$ is the scale parameter and $\alpha$ is related to the skewness of the distribution. The case in which $\xi = 0$, $\omega = 1$ and $\alpha = 0$ corresponds to the standard normal distribution. This distribution has been chosen to generate the data as it allows to model both the distance between means (the effect size), symmetry and variance.
+
+Mean and variance of the Skew-Normal are respectively:
+
+
+$$
+\begin{aligned}
+\mu &= \xi + \omega \gamma \sqrt{2/\pi} \\
+\sigma^2 &= \omega^2 \left[1 - \frac{2\gamma^2}{\pi}\right]
+\end{aligned}
+$$ {#eq-musigmaSN}
+
+
+in which $\gamma = \alpha / \sqrt{1 + \alpha^2}$.
+
+Based on @eq-musigmaSN we can determine the values to assign to the parameters $\xi$ and $\omega$ as functions of $\mu$ and $\sigma$ with:
+
+
+$$
+\begin{aligned}
+\xi &= \mu - \omega \gamma \sqrt{2/\pi} \\
+\omega &= \sqrt{\frac{\sigma^2}{1 - (2\gamma^2)/\pi}}
+\end{aligned}
+$$ {#eq-xiomegaSN}
+
+
+The Skew-Normal distribution is optimal for our purpose as it allows us to have control over parameters of mean, variance, skewness and kurtosis.
+
+### Simulation design
+
+In the simulation we compare two samples drawn from Skew-Normal distributions. The first sample is always generated from $\mathcal{SN}(0,1,0)$, which corresponds to a Standard Normal distribution with mean 0 and variance 1. The second sample is generated from $\mathcal{SN}(\xi,\omega,\alpha)$, where the parameters are manipulated to produce specific differences in means ($\delta$), standard deviations ($\sigma$), and skewness ($\alpha$) between the two populations.
+
+Overall, the experimental design comprises `r nrow(MUSI)` scenarios. In each scenario, the first sample remains fixed as $N(0,1)$, while the second sample is defined by the following parameter settings:
+
+- $\mu$ = `r PARlist$delta_vec`
+
+- $\sigma$ = `r PARlist$sigma_vec`
+
+- $\alpha$ = `r PARlist$alpha_vec`
+
+- $n$ = `r PARlist$n_vec`
+
+The figure below displays the experimental conditions: the black curves correspond to the first population, consistently modelled as $SN(0,1,0) = N(0,1)$, whereas the red curves represent the second population $SN(\xi,\omega,\alpha)$. The vertical dashed lines indicate the means of the respective distributions.
+
+
+```{r}
+#| echo: false
+#| fig-width: 8
+#| fig-height: 6
+#| label: fig-simulation
+#| fig-cap: Representation of the simulation. In each panel, the black curves correspond to the first population $SN(0,1,0) = N(0,1)$, while the red curves correspond to the second population $SN(\xi,\omega,\alpha)$.
+
+library(sn)
+library( ggplot2 )
+library( cowplot )
+
+GGlist <- list()
+
+theme_set( theme_minimal() )
+for ( j in 1:nrow(DD) ){
+  
+  gg <- ggplot() + stat_function( fun = dsn ) +
+    geom_vline(xintercept = MUSI$mu[j], lty = 3, col = "red") +
+    stat_function( fun = dsn, 
+      args = with(DD, list(xi = xi[j], omega=omega[j],alpha=alpha[j]) ), 
+      color = "red", n = 200 ) +
+    scale_x_continuous(limits = c(-6,6)) + 
+    ggtitle(bquote(mu == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
+    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
+    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
+    ~ omega == .(round(DD$omega[j],2)) ) ) + 
+    ylab("") + theme( title = element_text(size = 7.8)) +
+    scale_y_continuous( breaks = NULL )
+  
+  GGlist <- c( GGlist, list(gg) )
+}
+
+plot_grid( plotlist = GGlist, ncol = 2 )
+
+```
+
+
+
+For each of the `r nrow(MUSI)` conditions we generated `r nrow(MUSI)*B` sets of data on which we performed the analysis. 
+
+## Effect sizes for comparison
+
+For each combination $ \delta \times \sigma \times \alpha \times n $, on the generated data the following effect sizes are computed:
+
+- $\eta$ (non parametric overlap), 
+
+- OV (parametric overlap), 
+
+- Cohen's $d$ (between) 
+
+- Common Language Effect Size (CLES).
+
+## Performance Indexes
+
+Indices such as **Absolute mean bias** (AMB), **Mean Square Error** (MSE), **Root Mean Square Error** (RMSE) are tipically used to evaluate performance, but because the effect sizes are on different scales they would have been non comparable on those metrics. For this reason we chose to compare the performance of the effect sizes with the following performance indexes: 
+
+- **Relative mean bias** (RMB): computed as the mean of the relative biases,
+$1/B \sum_b (\hat{\theta}_{bj} - \theta_j)/\theta_j$. Relative bias values between -0.1 and 0.1 are considered acceptable. Note: when the true value $\theta_j = 0$, to avoid obtaining NaN, it is replaced with a very small number $\epsilon = `r 1e-06`$.
+
+- **Normalized Root Mean Square Error** (NRMSE): defined as $RMSE / (max(obs) - min(obs))$; that is, the RMSE value divided by the range of the estimated values.
+
+- **Coverage**: the proportion of simulated datasets for which the confidence interval of the estimator contains the true parameter value.
+
+## Results
+
+```{r}
+ALL$true_cles <- true_CLES( ALL$true_d )
+```
+
+### Descriptive statistics 
+
+Vediamo in dettaglio, le distribuzioni dei valori degli indici nelle `r nrow(DESIGN)` condizioni sperimentali.
+
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 5
+#| label: fig-correlations
+#| fig-cap: Correlazioni tra gli indici.
+
+library( GGally )
+GGR <- ALL[, c( "eta1", "Cohens_d", "Cles", "OV", "n" ) ]
+GGR$n <- factor(GGR$n) 
+theme_set( theme_minimal() )
+ggpairs( GGR, 
+         aes(fill = n, color = n, alpha = .3), 
+         columns = 1:4 ) 
+
+
+```
+
+
+
+### Indici di performance
+
+Per confrontare le performance calcoliamo le seguenti statistiche: 
+ 
+```{r AMB, echo=FALSE}
+ALL$bias_d <- with( ALL, abs(Cohens_d - true_d) )
+ALL$bias_eta <- with( ALL, abs(eta1 - true_overlap) )
+ALL$bias_cles <- with( ALL, abs(Cles - true_cles) )
+ALL$bias_ov <- with( ALL, abs(OV - true_overlap) )
+
+BIAS_d <- aggregate( bias_d ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+BIAS_eta <- aggregate( bias_eta ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+BIAS_cles <- aggregate( bias_cles ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+BIAS_ov <- aggregate( bias_ov ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+
+BIAS <- cbind( BIAS_d, BIAS_eta$bias_eta, BIAS_cles$bias_cles, BIAS_ov$bias_ov )
+colnames(BIAS) <- gsub("BIAS_ov\\$","",gsub("BIAS_cles\\$","",gsub("BIAS_eta\\$","",colnames(BIAS))))
+rm(BIAS_cles,BIAS_d,BIAS_eta)
+
+
+```
+ 
+ 
+
+```{r RMB, echo=FALSE}
+
+ALL$rbias_d <- with( ALL, relative_mean_bias(Cohens_d, true_d ))
+ALL$rbias_eta <- with( ALL, (eta1 - true_overlap)/true_overlap )
+ALL$rbias_cles <- with( ALL, (Cles - true_cles)/true_cles )
+ALL$rbias_ov <- with( ALL, (OV - true_overlap)/true_overlap )
+
+RBIAS_d <- aggregate( rbias_d ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+RBIAS_eta <- aggregate( rbias_eta ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+RBIAS_cles <- aggregate( rbias_cles ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+RBIAS_ov <- aggregate( rbias_ov ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+RBIAS <- cbind( RBIAS_d, RBIAS_eta$rbias_eta, RBIAS_cles$rbias_cles ,RBIAS_ov$rbias_ov)
+colnames(RBIAS) <- gsub("RBIAS_cles\\$","",gsub("RBIAS_eta\\$","",colnames(BIAS)))
+rm(RBIAS_d,RBIAS_cles,RBIAS_eta)
+
+```
+ 
+
+```{r MSE, echo=FALSE}
+
+ALL$bias_d <- with( ALL, Cohens_d - true_d )
+ALL$bias_eta <- with( ALL, eta1 - true_overlap )
+ALL$bias_cles <- with( ALL, Cles - true_cles )
+ALL$bias_ov <- with( ALL, OV - true_overlap )
+
+BIAS_d <- aggregate( bias_d ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+BIAS_eta <- aggregate( bias_eta ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+BIAS_cles <- aggregate( bias_cles ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+BIAS_ov <- aggregate( bias_ov ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+
+BIAS <- cbind( BIAS_d, BIAS_eta$bias_eta, BIAS_cles$bias_cles,BIAS_ov$bias_ov )
+colnames(BIAS) <- gsub("BIAS_ov\\$","",gsub("BIAS_cles\\$","",gsub("BIAS_eta\\$","",colnames(BIAS))))
+
+V_d <- aggregate( bias_d ~ n+mu+sigma+alpha, data = ALL, FUN = var )
+V_eta <- aggregate( bias_eta ~ n+mu+sigma+alpha, data = ALL, FUN = var )
+V_cles <- aggregate( bias_cles ~ n+mu+sigma+alpha, data = ALL, FUN = var )
+V_ov <- aggregate( bias_ov ~ n+mu+sigma+alpha, data = ALL, FUN = var )
+
+MSE_d <- BIAS_d
+MSE_d$mse_d <- MSE_d$bias_d^2 + V_d$bias_d
+MSE_eta <- BIAS_eta
+MSE_eta$mse_eta <- MSE_eta$bias_eta^2 + V_eta$bias_eta
+MSE_cles <- BIAS_cles
+MSE_cles$mse_cles <- MSE_cles$bias_cles^2 + V_cles$bias_cles
+MSE_ov <- BIAS_ov
+MSE_ov$mse_ov <- MSE_ov$bias_ov^2 + V_ov$bias_ov
+
+MSE <- cbind( MSE_d[,c("n","mu","sigma","alpha","mse_d")], MSE_eta$mse_eta, MSE_cles$mse_cles, MSE_ov$mse_ov )
+colnames(MSE) <- gsub("MSE_ov\\$","",gsub("MSE_cles\\$","",gsub("MSE_eta\\$","",colnames(MSE))))
+
+rm(MSE_cles,MSE_d,MSE_eta,BIAS_d,BIAS_cles,BIAS_eta,V_d,V_eta,V_cles,MSE_ov,V_ov)
+
+```
+
+```{r RMSE, echo=FALSE}
+
+RMSE <- MSE
+RMSE[,grep("mse",colnames(RMSE))] <- apply( RMSE[,grep("mse",colnames(RMSE))],2,sqrt )
+colnames(RMSE) <- gsub("mse","rmse",colnames(RMSE))
+
+```
+
+
+```{r NRMSE, echo=FALSE}
+
+RANGE_d <- aggregate( Cohens_d ~ n+mu+sigma+alpha, data = ALL, FUN = function(x){
+  max(x)-min(x)
+} )
+RANGE_eta <- aggregate( eta1 ~ n+mu+sigma+alpha, data = ALL, FUN = function(x){
+  max(x)-min(x)
+} )
+RANGE_cles <- aggregate( Cles ~ n+mu+sigma+alpha, data = ALL, FUN = function(x){
+  max(x)-min(x)
+} )
+
+
+NRMSE <- RMSE
+colnames(NRMSE) <- gsub("rmse","nrmse",colnames(NRMSE))
+NRMSE$nrmse_d <- NRMSE$nrmse_d / RANGE_d$Cohens_d
+NRMSE$nrmse_eta <- NRMSE$nrmse_eta / RANGE_eta$eta1
+NRMSE$nrmse_cles <- NRMSE$nrmse_cles / RANGE_cles$Cles
+
+```
+
+ 
+```{r,echo=FALSE}
+# tutti gli indici
+
+# Absolute mean bias
+ALL_bias <- stack( BIAS[,grep("bias",colnames(BIAS))] )
+ALL_bias$n <- BIAS$n
+ALL_bias$mu <- BIAS$mu
+ALL_bias$sigma <- BIAS$sigma
+ALL_bias$alpha <- BIAS$alpha
+ALL_bias$AMB <- ALL_bias$values
+ALL_bias$ind <- gsub("bias_","",ALL_bias$ind)
+BIAS <- ALL_bias[,c("ind","n","mu","sigma","alpha","AMB")]
+
+# Relative mean bias
+SB <- stack( RBIAS[,grep("bias",colnames(RBIAS))] )
+SB$n <- RBIAS$n
+SB$mu <- RBIAS$mu
+SB$sigma <- RBIAS$sigma
+SB$alpha <- RBIAS$alpha
+SB$RMB <- SB$values
+SB$ind <- gsub("bias_","",SB$ind)
+
+BIAS <- merge( BIAS, SB[,c("ind","n","mu","sigma","alpha","RMB")], by = c("ind","n","mu","sigma","alpha"))
+
+# Mean square error
+SB <- stack( MSE[,grep("mse",colnames(MSE))] )
+SB$n <- MSE$n
+SB$mu <- MSE$mu
+SB$sigma <- MSE$sigma
+SB$alpha <- MSE$alpha
+SB$MSE <- SB$values
+SB$ind <- gsub("mse_","",SB$ind)
+
+BIAS <- merge( BIAS, SB[,c("ind","n","mu","sigma","alpha","MSE")], by = c("ind","n","mu","sigma","alpha"))
+
+# Root Mean square error
+SB <- stack( RMSE[,grep("rmse",colnames(RMSE))] )
+SB$n <- RMSE$n
+SB$mu <- RMSE$mu
+SB$sigma <- RMSE$sigma
+SB$alpha <- RMSE$alpha
+SB$RMSE <- SB$values
+SB$ind <- gsub("rmse_","",SB$ind)
+
+BIAS <- merge( BIAS, SB[,c("ind","n","mu","sigma","alpha","RMSE")], by = c("ind","n","mu","sigma","alpha"))
+
+# Normalized Root Mean Square Error
+SB <- stack( NRMSE[,grep("nrmse",colnames(NRMSE))] )
+SB$n <- NRMSE$n
+SB$mu <- NRMSE$mu
+SB$sigma <- NRMSE$sigma
+SB$alpha <- NRMSE$alpha
+SB$NRMSE <- SB$values
+SB$ind <- gsub("nrmse_","",SB$ind)
+
+BIAS <- merge( BIAS, SB[,c("ind","n","mu","sigma","alpha","NRMSE")], by = c("ind","n","mu","sigma","alpha"))
+
+
+
+```
+ 
+Considerato che i tre indici non sono comparabili in senso assoluto, utilizziamo solo RMB (@fig-RMB) e NRMSE (@fig-NRMSE). Nel caso di quest'ultimo indice, aggiungiamo anche un secondo grafico (@fig-NRMSEa) in cui escludiamo Cles, che ha una performance molto perggiore degli altri.   
+
+
+ 
+```{r}
+#| echo: false
+#| label: fig-RMB
+#| fig-width: 8
+#| fig-height: 4
+#| fig-cap: Relative mean bias in funzione delle condizioni sperimentali. 
+
+ggplot( BIAS, aes( n, RMB, color = ind, shape = ind ) ) +
+  theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
+  geom_hline( yintercept = c(-.1,.1), lty = 3) +  
+  geom_point() + geom_line() + 
+  theme( legend.title = element_blank())
+
+
+```
+
+
+
+```{r}
+#| echo: false
+#| label: fig-NRMSEa
+#| fig-width: 8
+#| fig-height: 4
+#| fig-cap: Normalized relative mean square error in funzione delle condizioni sperimentali. In questo caso Cles è escluso perchè ha una performance nettamente peggiore degli altri. 
+
+ggplot( subset( BIAS, ind != "cles" ), aes( n, NRMSE, color = ind, shape = ind ) ) +
+  theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
+  geom_point() + geom_line() + 
+  theme( legend.title = element_blank())
+
+
+
+```
+
+
+
+### Coverage
+
+```{r}
+
+# per provare
+ALL$OV_low <- d_to_overlap( ALL$Cohen_low ) 
+ALL$OV_high <- d_to_overlap( ALL$Cohen_high ) 
+
+ALL$coverage_d <- with( ALL, 
+    (Cohen_low < true_d) & (Cohen_high > true_d ) )
+ALL$coverage_eta <- with( ALL, 
+    (eta1_low < true_overlap) & (eta1_high > true_overlap ) )
+ALL$coverage_ov <- with( ALL, 
+    (OV_low < true_overlap) & (OV_high > true_overlap ) )
+ALL$coverage_cles <- with( ALL, 
+    (Cles_low < true_cles) & (Cles_high > true_cles ) )
+
+```
+
+
+```{r}
+#| echo: false
+#| label: fig-coverage
+#| fig-width: 8
+#| fig-height: 4
+#| fig-cap: Coverage 90%. 
+
+COVERAGE <- aggregate( coverage_d ~ n+mu+sigma+alpha, data = ALL, FUN = mean )
+COVERAGE$coverage_eta <- aggregate( coverage_eta ~ n+mu+sigma+alpha, data = ALL, FUN = mean )$coverage_eta
+COVERAGE$coverage_ov <- aggregate( coverage_ov ~ n+mu+sigma+alpha, data = ALL, FUN = mean )$coverage_ov
+COVERAGE$coverage_cles <- aggregate( coverage_cles ~ n+mu+sigma+alpha, data = ALL, FUN = mean )$coverage_cles
+
+Y_coverage <- stack( COVERAGE[, grep("coverage",colnames(COVERAGE))])
+Y_coverage$n <- COVERAGE$n
+Y_coverage$mu <- COVERAGE$mu
+Y_coverage$sigma <- COVERAGE$sigma
+Y_coverage$alpha <- COVERAGE$alpha
+levels( Y_coverage$ind ) <- gsub("coverage_","",levels(Y_coverage$ind))
+
+ggplot( Y_coverage, aes( n, values, color = ind, shape = ind ) ) +
+  theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
+  geom_point() + geom_line() + 
+  theme( legend.title = element_blank())
+
+
+```
+
+Appare controintuitiva la performance di $\eta$ nella condizione $\mu = 2$, $\sigma = 1$, $\alpha = 10$, quindi vediamo, in @fig-x2110 la distribuzione dei valori stimati in questa condizione, in funzione di $n$.
+Se calcoliamo il valore vero via integrale, abbiamo:
+```{r, results='markup'}
+
+pars <- sninvpar( mu = 2, sigma = 1, alpha = 10 )
+
+integrate( min_dskew_normal, -6, 6, 
+           xi = pars$xi, omega = pars$omega, alpha = pars$alpha )
+
+```
+Tale valore viene riportato in figura con linea orizzontale punteggiata. 
+
+```{r}
+#| label: fig-x2110
+#| echo: false
+#| fig-width: 5
+#| fig-cap: !expr 'paste0("Distribuzioni, in funzione di $n$, delle stime di $\\eta$ nello scenario: $\\mu = 2$, $\\sigma = 1$, $\\alpha = 10$. Le linee rosse tratteggiate indicano i valori medi di confidenza al ", LEVEL*100,"%.")'
+
+X_2_1_10 <- subset( ALL, mu == 2 & sigma == 1 & alpha == 10 )
+Mlow <- aggregate( eta1_low ~ n, data = X_2_1_10, FUN = mean )
+Mhigh <- aggregate( eta1_high ~ n, data = X_2_1_10, FUN = mean )
+
+ggplot( X_2_1_10, aes( factor(n), eta1 ) ) +
+  theme_minimal() +
+  geom_boxplot() +
+  geom_hline( yintercept = X_2_1_10$true_overlap, lty = 3 ) +
+  geom_line( aes( factor(n), eta1_low, group = 1 ), data = Mlow, color = "red", lty = 2 ) +
+  geom_point( aes( factor(n), eta1_low, group = 1 ), data = Mlow, color = "red" ) +
+  geom_line( aes( factor(n), eta1_high, group = 1 ), data = Mhigh, color = "red", lty = 2 ) +
+  geom_point( aes( factor(n), eta1_high, group = 1 ), data = Mhigh, color = "red" ) +
+  xlab("n") + ylab("eta")
+
+
+```
+
+## References 
+
+::: {#refs}
+:::
+
+
+
+\end{document}
+
+## END
+
+
+Ad esempio:
+
+- Con $\mu = 0$, $\sigma = 1$ e $\alpha = 0$; le due distribuzioni sono uguali:
+
+```{r, echo=FALSE, fig.width=6}
+GGlist[[1]] + theme_minimal()
+```
+
+```{r}
+#| echo: true
+#| results: markup
+
+# mu = 0, sigma = 1, alpha = 0
+integrate( min_dskew_normal, -6, 6 )
+(d <- true_cohen( 0, 0, 1, 1 ))
+true_CLES( d )
+
+```
+**Esempio empirico**
+
+```{r, echo=FALSE}
+library( sn )
+N <- 1e4
+y1 <- rsn( N )
+y2 <- rsn( N, xi = 0, omega = 1, alpha = 0 )
+Ysim <- data.frame( 
+  y = c( y1, y2 ), 
+  g = factor( paste0("y",rep(1:2, each = N) )) )
+
+```
+
+Proviamo con dei dati simulati ($n = `r N`$)
+
+```{r,echo=FALSE, fig.width=6}
+
+j <- 1
+ggplot(Ysim, aes( y, fill = g, color = g ) ) + 
+  theme_minimal() + geom_density( alpha = .4 ) +
+  theme( legend.title = element_blank() ) +
+  xlab("") + ylab("") + 
+    ggtitle(bquote(mu == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
+    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
+    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
+    ~ omega == .(round(DD$omega[j],2)) ) )
+
+
+```
+
+```{r, results='markup'}
+
+library( overlapping )
+overlap( list( y1, y2) )
+library( effectsize )
+p_overlap( y1, y2, ci = LEVEL )
+cohens_d( y1, y2, ci = LEVEL )
+CLES_IC( y1, y2 )$CLES
+
+```
+
+
+- Con $\mu = 2$, $\sigma = 1$ e $\alpha = 0$; le due distribuzioni hanno una differenza media di 1, ma essendo simmetriche, i parametri della SN sono uguali, $\xi = 2$ e $\omega = 1$:
+
+```{r, echo=FALSE, fig.width=6}
+GGlist[[2]] + theme_minimal()
+```
+
+
+```{r}
+#| echo: true
+#| results: markup
+
+# mu = 2, sigma = 1, alpha = 0
+integrate( min_dskew_normal, -6, 6, xi = 2, omega = 1 )
+(d <- true_cohen( 0, 2, 1, 1 ))
+true_CLES( d )
+
+```
+
+**Esempio empirico**
+
+```{r, echo=FALSE}
+y2 <- rsn( N, xi = 2, omega = 1, alpha = 0 )
+Ysim <- data.frame( 
+  y = c( y1, y2 ), 
+  g = factor( paste0("y",rep(1:2, each = N) )) )
+
+```
+
+```{r,echo=FALSE, fig.width=6}
+
+j <- 2
+ggplot(Ysim, aes( y, fill = g, color = g ) ) + 
+  theme_minimal() + geom_density( alpha = .4 ) +
+  theme( legend.title = element_blank() ) +
+  xlab("") + ylab("") + 
+    ggtitle(bquote(mu == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
+    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
+    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
+    ~ omega == .(round(DD$omega[j],2)) ) )
+
+
+```
+
+```{r, results='markup'}
+
+overlap( list( y1, y2) )
+p_overlap( y1, y2, ci = LEVEL )
+cohens_d( y1, y2, ci = LEVEL )
+CLES_IC( y1, y2 )$CLES
+
+```
+
+
+
+- Con $\mu = 2$, $\sigma = 1$ e $\alpha = 10$; le due distribuzioni hanno una sempre una differenza media di 1, ma la seconda è asimmetrica, quindi i parametri della SN sono diversi, $\xi = `r round(sninvpar( 2, 1, alpha = 10 )$xi,2)`$  e $\omega = `r round(sninvpar( 2, 1, alpha = 10 )$omega,2)`$:
+
+```{r, echo=FALSE, fig.width=6}
+GGlist[[6]] + theme_minimal()
+```
+
+```{r}
+#| echo: true
+#| results: markup
+
+# mu = 2, sigma = 1, alpha = 10
+pars <- sninvpar( 2, 1, alpha = 10 )
+integrate( min_dskew_normal, -6, 6, 
+           xi = pars$xi, omega = pars$omega, alpha = pars$alpha )
+(d <- true_cohen( 0, 2, 1, 1 ))
+true_CLES( d )
+
+```
+
+Notiamo che in questo caso, nonostante la forte asimmetria, Cohen's $d$ e Cles rimangono invariati, proprio perché nelle formule di calcolo si tiene conto solo di media e deviazione standard. 
+
+**Esempio empirico**
+
+```{r, echo=FALSE}
+y2 <- with( pars, rsn( N, xi = xi, omega = omega, alpha = alpha ) )
+Ysim <- data.frame( 
+  y = c( y1, y2 ), 
+  g = factor( paste0("y",rep(1:2, each = N) )) )
+
+```
+
+```{r,echo=FALSE, fig.width=6}
+
+j <- 6
+ggplot(Ysim, aes( y, fill = g, color = g ) ) + 
+  theme_minimal() + geom_density( alpha = .4 ) +
+  theme( legend.title = element_blank() ) +
+  xlab("") + ylab("") + 
+    ggtitle(bquote(mu == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
+    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
+    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
+    ~ omega == .(round(DD$omega[j],2)) ) )
+
+
+```
+
+
+```{r, results='markup'}
+
+overlap( list( y1, y2) )
+p_overlap( y1, y2, ci = LEVEL )
+cohens_d( y1, y2, ci = LEVEL )
+CLES_IC( y1, y2 )$CLES
+
+```
+
+Si nota che anche l'indice OV, stima bene il grado di sovrapposizione, nonostante la marcata asimmetria della seconda distribuzione. 
+
+
+
+# Results
+
+Nella @tbl-frequenze è riportato il numero di repliche per ciascuna combinazione di $\mu$, $\sigma$ e $\alpha$; tale numero va diviso per `r length(unique(ALL$n))`, ovvero il numero di combinazioni di $n$, per avere il numero effettivo di repliche per cella del disegno, ovvero `r B`.
+
+```{r, echo=FALSE}
+#| results: asis
+#| tbl-cap: Numero di repliche effettive per ciascuna combinazione di $\\mu$, $\\sigma$ e $\\alpha$.
+#| label: tbl-frequenze
+
+Ftab <- data.frame( table(ALL$mu,ALL$sigma,ALL$alpha, 
+              dnn = list( "mu","sigma", "alpha")    ) )
+kable( Ftab )
+
+```
+
+### Valori veri e stimati
+
+Prima di tutto analizziamo i valori veri dei tre indici presi in esame. Poiché manca `true_cles`, lo calcoliamo, a partire dai valori di `true_d`:
+
+```{r modelli sugli indici, results='markup', echo=FALSE}
+
+if (esegui) {
+  library( effectsize )
+  fit_cohen <- lm( Cohens_d ~ n*mu*sigma*alpha, data = ALL )
+  etasq_cohen <- eta_squared( fit_cohen, partial = FALSE )
+  ETA2 <- etasq_cohen[,c("Parameter","Eta2")] 
+  colnames(ETA2)[2] <- "cohen"
+
+  library( betareg )
+  fit_eta <- betareg( eta1 ~ n*mu*sigma*alpha, data = ALL )
+  fit_eta_null <- betareg( eta1 ~ 1, data = ALL )
+  ETA2$eta <- beta_deviance_diff( fit_eta, fit_eta_null )$Proportion_Deviance_Explained
+  
+  fit_cles <- betareg( Cles ~ n*mu*sigma*alpha, data = ALL )
+  fit_cles_null <- betareg( Cles ~ 1, data = ALL )
+  ETA2$cles <- beta_deviance_diff( fit_cles, fit_cles_null )$Proportion_Deviance_Explained
+  
+  fit_OV <- betareg( OV ~ n*mu*sigma*alpha, data = ALL )
+  fit_OV_null <- betareg( OV ~ 1, data = ALL )
+  ETA2$ov <- beta_deviance_diff( fit_OV, fit_OV_null )$Proportion_Deviance_Explained
+  
+  save( ETA2, file = paste0(datadir,"R02_etasquared.rda"))
+  
+} else {
+  load( paste0(datadir,"R02_etasquared.rda") )
+}
+
+
+
+
+```
+
+
+
