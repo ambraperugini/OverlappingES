@@ -342,20 +342,50 @@ For each combination $\delta\times\sigma\times\alpha\times n$, on the generated 
 
 - Common Language Effect Size (CLES).
 
-- Parametric Overlap (OV), 
+- Overlapping Coefficient (OV, parametric overlap), 
 
 - Overlapping Index ($\eta$, non parametric overlap), 
 
 
 ## Definition of Effect sizes
 
-**Cohen's d**:
+**Cohen's d**: 
 
-**Common Language Effect Size**:
+The Cohen's $d$ is an effect size that standardizes differences in means between groups or conditions [@Cohen:1988]. In the simulated scenarios, it is appropriate to apply the between groups formula:
 
-**Parametric Overlap**:
+$$
+d = \frac{\bar{X}_1 - \bar{X}_2}{s_p}
+$${#eq-d}
 
-**The Overlapping index**: 
+where ${s_p}$ is the pooled standard deviation defined as $s_p = \sqrt{\frac{(n_1 - 1)s_1^{2} + (n_2 - 1)s_2^{2}}{n_1 + n_2 - 2}}$.
+
+
+**Common Language Effect Size (CLES)**:
+
+CLES represents the probability that a randomly picked individual from the group with the higher mean will exceed a randomly picked individual from the other group. It can be calculated as a function of Cohen's $d$:
+
+$$
+CLES = \Phi(|d|/\sqrt{2})
+$${#eq-CL}
+
+where $\Phi$ is the normal cumulative distribution function. Calculated from data the formula is: 
+
+$$
+CL = \frac{N_1}{N_1+N_0}
+$${#eq-CLdata}
+
+in which $N_1$ indicates the number of ordered pairs in which the first observation is greater than the second, and $N_0$ the number of ordered pairs in which the first observation is smaller than the second.
+
+**Overlapping Coefficient (OV)**:
+
+OV is the proportion of overlap between distributions and it is calculated from Cohen's d as follows:
+
+$$
+OV = 2\Phi(-|d|/2)
+$${#eq-OV}
+Once again $\Phi$ is the normal cumulative distribution function.
+
+**Overlapping index**: 
 
 The Overlapping Index defines the area intersected by two or more empirical density functions [@pastore+calcagni:2019]. This index varies from zero (complete disjointment) to one (complete overlap) and can be considered an index of similarity between groups/conditions.
 
@@ -371,7 +401,7 @@ where, in the discrete case, the integer can be replaced by summation. $\eta (A,
 
 ## Performance Indexes
 
-Indices such as **Absolute mean bias** (AMB), **Mean Square Error** (MSE), **Root Mean Square Error** (RMSE) are tipically used to evaluate performance, but because the effect sizes are on different scales they would have been non comparable on those metrics. For this reason we chose to compare the performance of the effect sizes with the following performance indexes: 
+To compare the performance of the effect sizes we calculated the following performance indexes: 
 
 - **Relative mean bias** (RMB): computed as the mean of the relative biases,
 $1/B \sum_b (\hat{\theta}_{bj} - \theta_j)/\theta_j$. Relative bias values between -0.1 and 0.1 are considered acceptable. Note: when the true value $\theta_j = 0$, to avoid obtaining NaN, it is replaced with a very small number $\epsilon = `r 1e-06`$.
@@ -379,6 +409,8 @@ $1/B \sum_b (\hat{\theta}_{bj} - \theta_j)/\theta_j$. Relative bias values betwe
 - **Normalized Root Mean Square Error** (NRMSE): defined as $RMSE / (max(obs) - min(obs))$; that is, the RMSE value divided by the range of the estimated values.
 
 - **Coverage**: the proportion of simulated datasets for which the confidence interval of the estimator contains the true parameter value.
+
+Indices such as **Absolute mean bias** (AMB), **Mean Square Error** (MSE), **Root Mean Square Error** (RMSE) are tipically used to evaluate performance, but because the effect sizes are on different scales they would not have been comparable on those metrics.
 
 # Results
 
@@ -389,15 +421,14 @@ ALL$true_cles <- true_CLES( ALL$true_d )
 
 ## Descriptive statistics 
 
-In @fig-correlations are shown in detail the distributions of the values of effect size indices in the `r nrow(DESIGN)` experimental conditions.
-
+In @fig-correlations reports the pairwise correlations among the four effect size indices considered in the study (Cohen’s $d$, CLES, OV, and $\eta$) across all `r nrow(DESIGN)` simulated conditions. The diagonal panels display the univariate distribution of each index, whereas the off-diagonal panels present the pairwise correlation coefficients. For each pair of indices, the overall correlation computed across all conditions is shown at the top of the panel, followed by the correlations obtained for each sample size (n = 10, 50, 100, 300, 500, 1000), different colors represent different sample sizes.
 
 ```{r}
 #| echo: false
 #| fig-width: 6
 #| fig-height: 5
 #| label: fig-correlations
-#| fig-cap: Correlazioni tra gli indici.
+#| fig-cap: Correlations between indexes.
 
 library( GGally )
 GGR <- ALL[, c( "eta1", "Cohens_d", "Cles", "OV", "n" ) ]
@@ -410,10 +441,11 @@ ggpairs( GGR,
 
 ```
 
-
+The @fig-correlations have a very clear pattern with Cohen's $d$, CLES and OV showing very high correlations between each other, consistently exceeding 0.95 with more than 50 observations and approaching 0.99 for larger sample sizes.  In contrast, $\eta$ has only moderate correlation with those three indexes, ranging between 0.40 and 0.50, suggesting that $\eta$ reflects a more distinct component of the data. Taken together, these findings indicate that Cohen's $d$, CLES and OV capture highly overlapping information about group differences, while $\eta$ provides a partially independent characterization of the effect, in line with the nature of the effect size that takes into consideration the shape of the distribution.
 
 ## Performance Indexes
 
+To evaluate the performance of the four effect sizes, we examined their Relative Mean Bias (RMB), Normalized Root Mean Square Error (NRMSE), and  Coverage across all simulated scenarios.
 
  
 ```{r AMB, echo=FALSE}
@@ -582,8 +614,12 @@ BIAS <- merge( BIAS, SB[,c("ind","n","mu","sigma","alpha","NRMSE")], by = c("ind
 
 ```
  
-To be able to compare the effect sizes despite the difference in scales, we focus only on RMB (@fig-RMB), NRMSE (@fig-NRMSE) and Coverage. For NRMSE, we also include a second plot (@fig-NRMSEa) in which CLES is excluded, as its performance is considerably worse than that of the other methods.
 
+
+### Relative Mean Bias (RMB)
+ 
+@fig-RMB shows the RMB for each index as a function of sample size and under different experimental conditions Overall, $\eta$ and Cohen's $d$ display the lowest bias, with values consistently close to zero across all conditions.
+CLES also exhibits relatively low bias across scenarios with equal means, but shows biased estimates when there is difference in means. In the opposite way, OV shows unbiased estimates under same variance ($\sigma = 1$) and biased estimates when variance is non-homogeneous between the two groups ($\sigma = 5$).
 
  
 ```{r}
@@ -591,7 +627,7 @@ To be able to compare the effect sizes despite the difference in scales, we focu
 #| label: fig-RMB
 #| fig-width: 8
 #| fig-height: 4
-#| fig-cap: Relative mean bias in funzione delle condizioni sperimentali. 
+#| fig-cap: Relative mean bias as a function of the experimental conditions. 
 
 ggplot( BIAS, aes( n, RMB, color = ind, shape = ind ) ) +
   theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
@@ -602,12 +638,16 @@ ggplot( BIAS, aes( n, RMB, color = ind, shape = ind ) ) +
 
 ```
 
+### Normalized Root Mean Square Error
+
+The NRMSE results (@fig-NRMSE) show that CLES displays much larger NRMSE, dominating the scale of the plot and confirming its poorer performance in terms of stability and precision when the there are differences in means between the two groups.
+
 ```{r}
 #| echo: false
 #| label: fig-NRMSE
 #| fig-width: 8
 #| fig-height: 4
-#| fig-cap: Normalized relative mean square error in funzione delle condizioni sperimentali. 
+#| fig-cap: Normalized relative mean square error as a function of the experimental conditions. 
 #| 
 ggplot( BIAS, aes( n, NRMSE, color = ind, shape = ind ) ) +
   theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
@@ -617,6 +657,9 @@ ggplot( BIAS, aes( n, NRMSE, color = ind, shape = ind ) ) +
 
 ```
 
+For this reason, we also include a second plot (@fig-NRMSEa) in which CLES is excluded, as its performance is considerably worse than that of the other indexes. 
+
+In this comparison, Cohen's $d$ emerges as the most stable estimator, with consistently lower NRMSE across all conditions. OV, instead, shows high bias when homogeneity of variance is not respected, but performs well under same variance conditions. $\eta$ performs worse when the two groups come from the same empirical distribution.
 
 
 ```{r}
@@ -624,7 +667,7 @@ ggplot( BIAS, aes( n, NRMSE, color = ind, shape = ind ) ) +
 #| label: fig-NRMSEa
 #| fig-width: 8
 #| fig-height: 4
-#| fig-cap: Normalized relative mean square error in funzione delle condizioni sperimentali. In questo caso Cles è escluso perchè ha una performance nettamente peggiore degli altri. 
+#| fig-cap: Normalized relative mean square error without CLES as a function of the experimental conditions.  
 
 ggplot( subset( BIAS, ind != "cles" ), aes( n, NRMSE, color = ind, shape = ind ) ) +
   theme_bw() + facet_grid( alpha ~ mu+sigma, labeller = label_both ) + geom_hline( yintercept = 0, lty = 2 ) +
@@ -635,6 +678,9 @@ ggplot( subset( BIAS, ind != "cles" ), aes( n, NRMSE, color = ind, shape = ind )
 
 ```
 
+### Coverage 
+
+The 90% Coverage results (@fig-coverage) show how Cohen's $d$ once more has good coverage in all scenarios, with OV and CLES having the worst coverage across scenarios and $\eta$ performing well in all scenarios, except in the one with $\alpha = 10$ and difference in means. 
 
 ```{r}
 #| echo: false
@@ -682,40 +728,6 @@ ggplot( Y_coverage, aes( n, values, color = ind, shape = ind ) ) +
 ```
 
 
-<!-- Appare controintuitiva la performance di $\eta$ nella condizione $\mu = 2$, $\sigma = 1$, $\alpha = 10$, quindi vediamo, in @fig-x2110 la distribuzione dei valori stimati in questa condizione, in funzione di $n$. -->
-<!-- Se calcoliamo il valore vero via integrale, abbiamo: -->
-```{r}
-#| echo: false
-pars <- sninvpar( mu = 2, sigma = 1, alpha = 10 )
-
-integrate( min_dskew_normal, -6, 6, 
-           xi = pars$xi, omega = pars$omega, alpha = pars$alpha )
-
-```
-<!-- Tale valore viene riportato in figura con linea orizzontale punteggiata.  -->
-
-```{r}
-#| label: fig-x2110
-#| echo: false
-#| fig-width: 5
-#| fig-cap: !expr 'paste0("Distribuzioni, in funzione di $n$, delle stime di $\\eta$ nello scenario: $\\mu = 2$, $\\sigma = 1$, $\\alpha = 10$. Le linee rosse tratteggiate indicano i valori medi di confidenza al ", LEVEL*100,"%.")'
-
-X_2_1_10 <- subset( ALL, mu == 2 & sigma == 1 & alpha == 10 )
-Mlow <- aggregate( eta1_low ~ n, data = X_2_1_10, FUN = mean )
-Mhigh <- aggregate( eta1_high ~ n, data = X_2_1_10, FUN = mean )
-
-ggplot( X_2_1_10, aes( factor(n), eta1 ) ) +
-  theme_minimal() +
-  geom_boxplot() +
-  geom_hline( yintercept = X_2_1_10$true_overlap, lty = 3 ) +
-  geom_line( aes( factor(n), eta1_low, group = 1 ), data = Mlow, color = "red", lty = 2 ) +
-  geom_point( aes( factor(n), eta1_low, group = 1 ), data = Mlow, color = "red" ) +
-  geom_line( aes( factor(n), eta1_high, group = 1 ), data = Mhigh, color = "red", lty = 2 ) +
-  geom_point( aes( factor(n), eta1_high, group = 1 ), data = Mhigh, color = "red" ) +
-  xlab("n") + ylab("eta")
-
-
-```
 
 # References 
 
