@@ -222,7 +222,7 @@ DD <- data.frame(DESIGN)
 
 ## Data Generation
 
-The simulation generates pairs of sets of data from density distributions in different scenarios.  
+The simulation generates sets of data from density distributions in different scenarios.  
 The first distribution from which the data is generated is a normal standard with $\mu = 0$ and $\sigma = 1$. The second set of data is generated from the Skew-Normal distribution @azzalini:1985, which is defined in the following way: given $\xi \in \mathbb{R}$, $\omega \in \mathbb{R}^{+}$ and $\alpha \in \mathbb{R}$, then for $y \in \mathbb{R}$ we have
 
 
@@ -285,15 +285,15 @@ In the simulation we compare two samples drawn from Skew-Normal distributions. T
 
 Overall, the experimental design comprises `r nrow(MUSI)` scenarios. In each scenario, the first sample remains fixed as $N(0,1)$, while the second sample is defined by the following parameter settings:
 
-- $\mu$ = `r PARlist$delta_vec`
+- $\mu$ = `r PARlist$delta_vec`; mean of the second population;
 
-- $\sigma$ = `r PARlist$sigma_vec`
+- $\sigma$ = `r PARlist$sigma_vec`; standard deviation of the second population;
 
-- $\alpha$ = `r PARlist$alpha_vec`
+- $\alpha$ = `r PARlist$alpha_vec`; asymmetry, is always 0 in the first population and varies in the second group;
 
-- $n$ = `r PARlist$n_vec`
+- $n$ = `r PARlist$n_vec`; sampòe size, equal in the two samples.
 
-The figure below displays the experimental conditions: the black curves correspond to the first population, consistently modelled as $SN(0,1,0) = N(0,1)$, whereas the red curves represent the second population $SN(\xi,\omega,\alpha)$. The vertical dashed lines indicate the means of the respective distributions.
+The figure below displays the experimental conditions: the black curves correspond to the first population, consistently modeled as $SN(0,1,0) = N(0,1)$, whereas the red curves represent the second population $SN(\xi,\omega,\alpha)$. The vertical dashed lines indicate the means of the respective distributions.
 
 
 ```{r}
@@ -349,7 +349,7 @@ For each combination $\delta\times\sigma\times\alpha\times n$, on the generated 
 
 ## Definition of Effect sizes
 
-**Cohen's d**: 
+### Cohen's d: 
 
 The Cohen's $d$ is an effect size that standardizes differences in means between groups or conditions [@Cohen:1988]. In the simulated scenarios, it is appropriate to apply the between groups formula:
 
@@ -359,10 +359,9 @@ $${#eq-d}
 
 where ${s_p}$ is the pooled standard deviation defined as $s_p = \sqrt{\frac{(n_1 - 1)s_1^{2} + (n_2 - 1)s_2^{2}}{n_1 + n_2 - 2}}$.
 
+### Common Language Effect Size (CLES):
 
-**Common Language Effect Size (CLES)**:
-
-CLES represents the probability that a randomly picked individual from the group with the higher mean will exceed a randomly picked individual from the other group. It can be calculated as a function of Cohen's $d$:
+CLES represents the probability that a randomly picked individual from the group with the higher mean will exceed a randomly picked individual from the other group [@mcgraw1992common]. It can be calculated as a function of Cohen's $d$:
 
 $$
 CLES = \Phi(|d|/\sqrt{2})
@@ -376,16 +375,17 @@ $${#eq-CLdata}
 
 in which $N_1$ indicates the number of ordered pairs in which the first observation is greater than the second, and $N_0$ the number of ordered pairs in which the first observation is smaller than the second.
 
-**Overlapping Coefficient (OV)**:
+### Overlapping Coefficient (OV):
 
-OV is the proportion of overlap between distributions and it is calculated from Cohen's d as follows:
+OV is the proportion of overlap between distributions [@inman1989overlapping] and it is calculated from Cohen's d as follows:
 
 $$
 OV = 2\Phi(-|d|/2)
 $${#eq-OV}
+
 Once again $\Phi$ is the normal cumulative distribution function.
 
-**Overlapping index**: 
+### Overlapping index $\eta$: 
 
 The Overlapping Index defines the area intersected by two or more empirical density functions [@pastore+calcagni:2019]. This index varies from zero (complete disjointment) to one (complete overlap) and can be considered an index of similarity between groups/conditions.
 
@@ -399,7 +399,7 @@ $${#eq-eta}
 where, in the discrete case, the integer can be replaced by summation. $\eta (A,B)$ is normalized to one and when the distributions of A and B do not have points in common, meaning that $f_A (x)$ and $f_B (x)$ are disjoint, $\eta (A,B) = 0$.
 
 
-## Performance Indexes
+## Performance Indexes for comparison
 
 To compare the performance of the effect sizes we calculated the following performance indexes: 
 
@@ -441,7 +441,7 @@ ggpairs( GGR,
 
 ```
 
-The @fig-correlations have a very clear pattern with Cohen's $d$, CLES and OV showing very high correlations between each other, consistently exceeding 0.95 with more than 50 observations and approaching 0.99 for larger sample sizes.  In contrast, $\eta$ has only moderate correlation with those three indexes, ranging between 0.40 and 0.50, suggesting that $\eta$ reflects a more distinct component of the data. Taken together, these findings indicate that Cohen's $d$, CLES and OV capture highly overlapping information about group differences, while $\eta$ provides a partially independent characterization of the effect, in line with the nature of the effect size that takes into consideration the shape of the distribution.
+The @fig-correlations have a very clear pattern, with Cohen's $d$, CLES and OV showing very high correlations between each other, consistently exceeding 0.95 with more than 50 observations and approaching 0.99 for larger sample sizes.  In contrast, $\eta$ has only moderate correlation with those three indexes, ranging between 0.40 and 0.50, suggesting that $\eta$ reflects a more distinct component of the data. Taken together, these findings indicate that Cohen's $d$, CLES and OV capture highly overlapping information about group differences, while $\eta$ provides a partially independent characterization of the effect, in line with the nature of the effect size that takes into consideration the shape of the distribution.
 
 ## Performance Indexes
 
@@ -618,7 +618,7 @@ BIAS <- merge( BIAS, SB[,c("ind","n","mu","sigma","alpha","NRMSE")], by = c("ind
 
 ### Relative Mean Bias (RMB)
  
-@fig-RMB shows the RMB for each index as a function of sample size and under different experimental conditions Overall, $\eta$ and Cohen's $d$ display the lowest bias, with values consistently close to zero across all conditions.
+@fig-RMB shows the RMB for each index as a function of sample size and under different experimental conditions. Overall, $\eta$ and Cohen's $d$ display the lowest bias, with values consistently close to zero across all conditions.
 CLES also exhibits relatively low bias across scenarios with equal means, but shows biased estimates when there is difference in means. In the opposite way, OV shows unbiased estimates under same variance ($\sigma = 1$) and biased estimates when variance is non-homogeneous between the two groups ($\sigma = 5$).
 
  
