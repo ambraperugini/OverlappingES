@@ -1,0 +1,958 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  12pt,
+  a4paper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
+
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage[]{times}
+\ifPDFTeX\else  
+    % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[lmargin=1in,rmargin=1in]{geometry}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\setcounter{secnumdepth}{5}
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Not Normal: A Simulation Study Comparing Effect Sizes for Skewed Psychological Data},
+  pdfauthor={Ambra Perugini; Giulia Calignano; Massimiliano Pastore},
+  pdfkeywords={Effect
+sizes, Simulation, Overlapping, Assumptions, Non-normality},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Not Normal: A Simulation Study Comparing Effect Sizes for Skewed
+Psychological Data}
+\author{Ambra Perugini \and Giulia Calignano \and Massimiliano Pastore}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+Effect sizes are widely used in psychological science, but with a mere
+focus on mean differences. This study compares three mean-based indices:
+Cohen's \(d\), the Common Language Effect Size (CLES), the parametric
+overlap coefficient derived from d (\(\eta_p\)), to the nonparametric
+Overlapping Index (\(\eta\)), which focuses on the entire distributional
+differences. Using skew-normal distributions, to generate controlled
+scenarios of violations of normality and variance homogeneity, and
+symmetry, we systematically manipulated mean differences, variance
+ratios, skewness, and sample size to evaluate each index in terms of
+Relative Mean Bias, Normalized Root Mean Square Error, and 90\%
+Coverage. Cohen's \(d\), CLES, and \(\eta_p\) showed near-perfect
+descriptive correlations, but their performance differed substantially.
+Cohen's \(d\) consistently displayed low bias, high precision, and
+accurate coverage across all scenarios, whereas CLES and \(\eta_p\)
+exhibited substantial bias and low coverage, particularly under skewness
+and heteroscedasticity. The nonparametric index \(\eta\) remained
+unbiased under shape differences and variance heterogeneity but
+performed less reliably when the populations truly overlapped. These
+results demonstrate that effect-size indices derived from \(d\) are not
+interchangeable, and that high empirical correlations do not guarantee
+same precision. Cohen's \(d\) remains the most robust estimator of a
+location difference, whereas \(\eta\) provides a more complete view of
+the entire distribution. We argue that researchers should select
+effect-sizes based on their statistical properties and propose a shift
+towards interpreting effects in light of the full distribution, rather
+than through mean-based conventions.
+\end{abstract}
+
+
+\section{Introduction}\label{introduction}
+
+Researchers often behave as if a single number could capture the entire
+contrast between two empirical worlds. In psychological research,
+standardized effect size metrics are ubiquitous. As suggested by Lakens
+(2013), Cohen's d is ``the most widely used effect size in psychological
+research'' and is routinely used in meta-analyses aggregating group
+differences. As proposed by McGraw \& Wong (1992) and Mastrich (2021),
+the Common Language Effect Size (CLES) is ``an appealing index of effect
+size,'' offering an intuitive interpretation in terms of probabilities
+of superiority. In their standard parametric form, both Cohen's d and
+CLES answer to the distance between means under assumptions of smooth,
+symmetric, and homoscedastic distributions. Under those conditions,
+variance does not rebel, and tails do not bend.
+
+Yet the distributions underlying psychological data rarely obey this
+ideal. Even in purely simulated scenarios, once asymmetry, variance
+heterogeneity, and modest or large mean shifts are introduced, the data
+no longer present a single clean contrast in location. Skewed
+distributions, heavy right tails, and unequal dispersions create
+conditions where the ``same'' effect, expressed as a standardized mean
+difference, may emerge from very different shapes. Metrics that compress
+the entire contrast into a standardized difference in means can then
+misrepresent how groups truly diverge: they may be accurate about a
+central shift while remaining blind to the structure of the tails or to
+the degree of overlap between distributions.
+
+As defined by Pastore \& Calcagnì (2019), the Overlapping Index
+(\(\eta\)) formalizes a distribution-sensitive perspective by
+quantifying how much two empirical density functions intersect. Unlike
+parametric overlap measures derived from Cohen's \(d\) (such as the
+Parametric Overlap, \(\eta_p\)), \(\eta\) does not rely on normality or
+equal variances and can register differences that live in skewness,
+kurtosis, or tail behavior. In this sense, Cohen's d, CLES, \(\eta_p\),
+and \(\eta\) can be regarded as four different storytellers: some
+summarizing only where the centers lie, others attending to how far and
+how often the distributions diverge in their shapes.
+
+The present work compares these four metrics that is, Cohen's \(d\),
+CLES, \(\eta_p\), and \(\eta\) across a controlled set of non-normality
+scenarios generated from skew-normal distributions. By systematically
+varying mean differences, variance ratios, skewness, and sample sizes,
+and by computing all four indices on the same simulated datasets, we
+examine both how strongly they agree in practice and how well they
+recover the underlying population contrasts. We evaluate their behavior
+through Relative Mean Bias, Normalized Root Mean Square Error, and
+Coverage, thereby assessing not only the magnitude each index reports
+but also its bias, stability, and inferential reliability under
+violations of normality and homoscedasticity. These results reveal when
+classical, mean-based storytellers (\(d\), CLES, \(\eta_p\)) essentially
+retell the same narrative, and when the distribution-based \(\eta\)
+instead traces a distinct contour of difference, grounded in how much
+the two distributions truly overlap rather than in how far apart their
+means appear.
+
+Of notice, the simulation-based approach is useful because it allows the
+evaluation of effect-size indices under fully controlled conditions,
+where the data-generating mechanisms are explicitly known and can be
+manipulated independently. As emphasized in the broader methodological
+literature on model assessment and inference (Akaike, 1973; Burnham \&
+Anderson, 2002; Wagenmakers \& Farrell, 2004), the simulation provides a
+principled way to examine how estimators behave when theoretical
+assumptions are systematically violated. By varying mean differences,
+variance ratios, skewness, kurtosis, and sample sizes, simulations make
+it possible to quantify bias, precision, and robustness in ways that
+real datasets that are necessarily, limited, idiosyncratic, and often
+confounded cannot support. This framework exposes each metric to the
+kinds of distributional structures that typify psychological data,
+revealing where classical indices remain stable and where they fail. In
+this sense, the simulation functions as an empirical stress test,
+offering a clearer view of the operating characteristics of Cohen's
+\(d\), CLES, \(\eta_p\), and \(\eta\) across the proposed landscape of
+plausible data-generating scenarios.
+
+\section{The Simulation Study}\label{the-simulation-study}
+
+\subsection{Data Generation}\label{data-generation}
+
+The simulation generates data sets from density distributions in
+different scenarios. In particular, we used the Skew-Normal distribution
+(Azzalini, 1985), which is defined in the following way: given
+\(\xi \in \mathbb{R}\), \(\omega \in \mathbb{R}^{+}\) and
+\(\alpha \in \mathbb{R}\), then for \(y \in \mathbb{R}\) we have
+
+\begin{equation}\phantomsection\label{eq-skewnormal}{
+\mathcal{SN}(y|\xi, \omega, \alpha)
+  = \frac{1}{\omega \sqrt{2\pi}}
+    \exp\left[
+       -\frac{1}{2}\left( \frac{y-\xi}{\omega} \right)^2
+    \right]
+    \left[
+      1 + \text{erf}\left(
+           \alpha \left( \frac{y-\xi}{\omega\sqrt{2}} \right)
+      \right)
+    \right]
+}\end{equation}
+
+in which
+
+\begin{equation}\phantomsection\label{eq-erf}{
+\text{erf}(z)
+  = \frac{2}{\sqrt{\pi}} \int_{0}^{z} e^{-t^2}\, dt
+}\end{equation}
+
+is the \emph{error function}.
+
+\(\xi\) is the location parameter, \(\omega\) is the scale parameter and
+\(\alpha\) is related to the skewness of the distribution. The case in
+which \(\xi = 0\), \(\omega = 1\) and \(\alpha = 0\) corresponds to the
+standard normal distribution. This distribution has been chosen to
+generate the data as it allows to model both the distance between means
+(the effect size), symmetry and variance. Consequently, it is optimal
+for our purpose as it allows us to have control over the parameters of
+mean, variance, skewness and kurtosis.
+
+Mean and variance of the Skew-Normal are respectively:
+
+\begin{equation}\phantomsection\label{eq-musigmaSN}{
+\begin{aligned}
+\mu &= \xi + \omega \gamma \sqrt{2/\pi} \\
+\sigma^2 &= \omega^2 \left[1 - \frac{2\gamma^2}{\pi}\right]
+\end{aligned}
+}\end{equation}
+
+in which \(\gamma = \alpha / \sqrt{1 + \alpha^2}\).
+
+Based on Equation~\ref{eq-musigmaSN} we can determine the values to
+assign to the parameters \(\xi\) and \(\omega\) as functions of \(\mu\)
+and \(\sigma\) with:
+
+\begin{equation}\phantomsection\label{eq-xiomegaSN}{
+\begin{aligned}
+\xi &= \mu - \omega \gamma \sqrt{2/\pi} \\
+\omega &= \sqrt{\frac{\sigma^2}{1 - (2\gamma^2)/\pi}}
+\end{aligned}
+}\end{equation}
+
+\subsection{Simulation design}\label{simulation-design}
+
+The experiment consists of comparing two samples. We generated the first
+sample from \(\mathcal{SN}(0,1,0)\), which corresponds to a Standard
+Normal distribution with mean 0 and variance 1. We generated the second
+sample from \(\mathcal{SN}(\xi,\omega,\alpha)\), where the parameters
+are manipulated to produce specific differences in means (\(\delta\)),
+standard deviations (\(\sigma\)), and skewness (\(\alpha\)) between the
+two populations.
+
+Overall, the experimental design comprises 8 scenarios. In each
+scenario, the first sample remains fixed as
+\(\mathcal{SN}(0,1,0) \equiv N(0,1)\), while the second sample is
+defined by the following parameter settings:
+
+\begin{itemize}
+\item
+  \(\mu\) = 0, 2; mean of the second population. As the first sample
+  always comes from a population with a mean of 0, this parameter ---
+  the mean of the population from which the second sample is drawn ---
+  also represents the true difference between the means. Consequently,
+  in the following sections of the paper we refers to this parameter as
+  \(\delta\);
+\item
+  \(\sigma\) = 1, 5; standard deviation of the second population;
+\item
+  \(\alpha\) = 0, 10; asymmetry varies in the second group;
+\item
+  \(n\) = 10, 50, 100, 300, 500, 1000; sample size, equal in the two
+  samples.
+\end{itemize}
+
+Figure~\ref{fig-simulationz} displays the experimental scenarios: the
+black curves correspond to the first population, consistently modeled as
+\(\mathcal{SN}(0,1,0) \equiv N(0,1)\), whereas the red curves represent
+the second population \(\mathcal{SN}(\xi,\omega,\alpha)\). The vertical
+dashed lines indicate the means of these second distributions and also
+the mean difference, \(\delta\).
+
+\begin{figure}[!t]
+
+\centering{
+
+\includegraphics{draft04_files/figure-latex/fig-simulationz-1.pdf}
+
+}
+
+\caption{\label{fig-simulationz}Representation of the simulation. In
+each panel, the black curves correspond to the first population
+\(\mathcal{SN}(0,1,0) \equiv N(0,1)\), while the red curves correspond
+to the second population \(\mathcal{SN}(\xi,\omega,\alpha)\).}
+
+\end{figure}%
+
+For each of the 8 conditions we generated 2000 couples of independent
+samples and performed the analysis. On these generated data, for each
+combination \(\delta\times\sigma\times\alpha\times n\), we computed the
+following effect sizes:
+
+\begin{itemize}
+\item
+  Cohen's \(d\)
+\item
+  Common Language Effect Size (CLES).
+\item
+  Two kinds of Overlapping Coefficient:
+
+  \begin{enumerate}
+  \def\labelenumi{\arabic{enumi}.}
+  \tightlist
+  \item
+    \emph{Parametric} (\(\eta_p\))
+  \item
+    \emph{Non-parametric} (\(\eta\)).
+  \end{enumerate}
+\end{itemize}
+
+\subsection{Definition of Effect
+sizes}\label{definition-of-effect-sizes}
+
+\subsubsection{Cohen's d:}\label{cohens-d}
+
+The Cohen's \(d\) is an effect size that standardizes differences in
+means between groups or conditions (Cohen, 1988). This index
+theoretically ranges from 0 to \(+\infty\) (for differences in one
+direction) or \(-\infty\) to 0 (for the opposite direction), but in
+practice, values rarely exceed a range of -3 to +3. A value of 0
+indicates identical group means, whereas larger absolute values indicate
+greater centroid distance. In the simulated scenarios, it is appropriate
+to apply the between groups formula:
+
+\begin{equation}\phantomsection\label{eq-d}{
+d = \frac{\bar{X}_1 - \bar{X}_2}{s_p}
+}\end{equation}
+
+where \({s_p}\) is the pooled standard deviation defined as
+\(s_p = \sqrt{\frac{(n_1 - 1)s_1^{2} + (n_2 - 1)s_2^{2}}{n_1 + n_2 - 2}}\).
+
+\subsubsection{Common Language Effect Size
+(CLES):}\label{common-language-effect-size-cles}
+
+CLES represents the probability that a randomly picked individual from
+the group with the higher mean will exceed a randomly picked individual
+from the other group (McGraw \& Wong, 1992). This index ranges from 0 to
+1 and expresses the probability that a randomly selected observation
+from one group will exceed a randomly selected observation from another.
+A value of 0.50 indicates complete overlap (no effect), values above
+0.50 favor one group, and values below 0.50 favor the other, and
+calculated from data the formula is:
+
+\begin{equation}\phantomsection\label{eq-CLdata}{
+CL = \frac{N_1}{N_1+N_0}
+}\end{equation}
+
+in which \(N_1\) indicates the number of ordered pairs in which the
+first observation is greater than the second, and \(N_0\) the number of
+ordered pairs in which the first observation is smaller than the second.
+
+It can be also calculated as a function of Cohen's \(d\), \(\Phi\) is
+the normal cumulative distribution function:
+
+\begin{equation}\phantomsection\label{eq-CL}{
+CL = \Phi(|d|/\sqrt{2})
+}\end{equation}
+
+\subsubsection{Overlapping Coefficient:}\label{overlapping-coefficient}
+
+The concept of overlap refers to the shared area between two or more
+probability density functions. It provides an intuitive measure for
+assessing the degree of similarity or difference between samples or
+populations characterized by their distributions. When two populations
+(or samples) exhibit a high degree of overlap in their distribution
+functions, it suggests a strong similarity between them. Conversely,
+minimal overlap indicates substantial differences.
+
+The \emph{parametric} version of the Overlapping coefficient can be
+derived from Cohen's \(d\) as follows:
+
+\begin{equation}\phantomsection\label{eq-OV}{
+\eta_p = 2\Phi(-|d|/2)
+}\end{equation} where \(\Phi\) is the normal cumulative distribution
+function.
+
+The \emph{non-parametric} version (\(\eta\)) is computed using a kernel
+approach and serves as a distribution-free approximation of \(\eta_p\)
+(for more details, see Pastore \& Calcagnì (2019)).
+
+This coefficient varies from zero (indicating complete disjointness) to
+one (indicating complete overlap) and can be considered an index of
+similarity between groups or conditions.
+
+\subsection{Performance Indexes for
+comparison}\label{performance-indexes-for-comparison}
+
+In order to compare the performance of the chosen indices, we need
+indices that are not related to possible empirical values. We should
+note that, whereas Cohen's \(d\) ranges over the real numbers, the other
+three indices range from 0 to 1. Consequently, we used the following
+performance indices:
+
+\begin{itemize}
+\item
+  \emph{Relative mean bias} (RMB) captures the average proportional
+  deviation between an estimator and its population value across Monte
+  Carlo replications. It is defined as \[
+  RMB = (1/B) \sum_b \left[ (\hat{\theta}_{bj} − \theta_j) / \theta_j \right].
+  \] where \(\theta_j\) is the true parameter value in condition \(j\)
+  and \(\hat{\theta}_{bj}\) is the estimated value in the \(b\)
+  replications for condition \(j\). Because this ratio expresses error
+  relative to the magnitude of the true parameter, it produces a
+  scale-free measure of systematic distortion. Values close to zero
+  indicate negligible bias, and values within the \(\pm 0.10\) interval
+  are typically interpreted as acceptable. Whenever the true value
+  \(\theta_j\) equals zero, a small constant \((\epsilon = 10^{-6})\) is
+  substituted to prevent undefined divisions, ensuring numerical
+  stability across replications.
+\item
+  \emph{Normalized root mean square error} (NRMSE) extends this
+  scale-free approach to overall estimation error. It is simply derived
+  from the Root Mean Square Error (RMSE) index dividing it by the
+  empirical range of observed estimates, \[
+  NRMSE = RMSE / (max(obs) − min(obs)),
+  \] As with RMB, lower values indicate better performance.
+\item
+  \emph{Coverage} evaluates whether the inferential procedure is
+  properly calibrated. It represents the proportion of simulated
+  datasets whose 90\% confidence interval contains the true parameter
+  value. High coverage indicates that the interval estimation procedure
+  maintains its nominal reliability, independent of the scale of the
+  underlying effect-size index.
+\end{itemize}
+
+Note that, other traditional indices such as Absolute Mean Bias, Mean
+Square Error, and RMSE are less suitable in this context because they
+remain scale-dependent. The relative and normalized metrics above
+resolve this limitation by expressing accuracy on a common proportional
+scale.
+
+\section{Results}\label{results}
+
+\subsection{Descriptive statistics}\label{descriptive-statistics}
+
+In Figure~\ref{fig-correlations} reports the pairwise correlations among
+the four effect size indices considered in the study (Cohen's \(d\),
+CLES, \(\eta_p\), and \(\eta\)) across all 48 simulated conditions. The
+diagonal panels display the univariate distribution of each index,
+whereas the off-diagonal panels present the scatter plot (under the
+diagonal) and pairwise correlation coefficients (above the diagonal);
+different colors represent different sample sizes (n = 10, 50, 100, 300,
+500, 1000).
+
+\begin{figure}[!t]
+
+\centering{
+
+\includegraphics{draft04_files/figure-latex/fig-correlations-1.pdf}
+
+}
+
+\caption{\label{fig-correlations}Pairwise relationship between indexes.
+The diagonal panels show the distribution of each index individually,
+while the off-diagonal panels show the scatter plot (below the diagonal)
+and the correlation coefficients (above the diagonal). Different colours
+represent different sample sizes.}
+
+\end{figure}%
+
+The Figure~\ref{fig-correlations} have a very clear pattern, with
+Cohen's \(d\), CLES and \(\eta_p\) showing very high correlations
+between each other, consistently exceeding 0.95 with more than 50
+observations and approaching 0.99 for larger sample sizes. In contrast,
+\(\eta\) has only moderate correlation with those three indexes, ranging
+between 0.40 and 0.50, suggesting that \(\eta\) reflects a more distinct
+component of the data. Taken together, these findings indicate that
+Cohen's \(d\), CLES and \(\eta_p\) capture highly overlapping
+information about group differences, while \(\eta\) provides a partially
+independent characterization of the effect, in line with the nature of
+the effect size that takes into consideration the shape of the
+distribution.
+
+\subsection{Performance Indexes}\label{performance-indexes}
+
+To evaluate the performance of the four effect sizes, we examined their
+Relative Mean Bias (RMB), Normalized Root Mean Square Error (NRMSE), and
+Coverage across all simulated scenarios.
+
+\subsubsection{Relative Mean Bias (RMB)}\label{relative-mean-bias-rmb}
+
+Figure~\ref{fig-RMB} shows the RMB for each index as a function of
+sample size and under different experimental conditions. Overall,
+\(\eta\) and Cohen's \(d\) display the lowest bias, with values
+consistently close to zero across all conditions. CLES also exhibits
+relatively low bias across scenarios with equal means, but shows biased
+estimates when there is difference in means (\(\delta = 2\)). In the
+opposite way, \(\eta_p\) shows unbiased estimates under same variance
+(\(\sigma = 1\)) and biased estimates when variance is non-homogeneous
+between the two groups (\(\sigma = 5\)).
+
+\begin{figure}[!t]
+
+\centering{
+
+\includegraphics{draft04_files/figure-latex/fig-RMB-1.pdf}
+
+}
+
+\caption{\label{fig-RMB}Relative mean bias as a function of the
+experimental conditions.}
+
+\end{figure}%
+
+\subsubsection{Normalized Root Mean Square
+Error}\label{normalized-root-mean-square-error}
+
+The NRMSE results (Figure~\ref{fig-NRMSE}) show that CLES displays much
+larger NRMSE, dominating the scale of the plot and confirming its poorer
+performance in terms of stability and precision when there are
+differences in means between the two groups.
+
+\begin{figure}[!t]
+
+\centering{
+
+\includegraphics{draft04_files/figure-latex/fig-NRMSE-1.pdf}
+
+}
+
+\caption{\label{fig-NRMSE}Normalized relative mean square error as a
+function of the experimental conditions.}
+
+\end{figure}%
+
+For this reason, we also include a second plot (Figure~\ref{fig-NRMSEa})
+in which CLES is excluded, as its performance is considerably worse than
+that of the other indexes.
+
+In this comparison, Cohen's \(d\) emerges as the most stable estimator,
+with consistently lower NRMSE across all conditions. \(\eta_p\),
+instead, shows high bias when homogeneity of variance is not respected,
+but performs well under same variance conditions. \(\eta\) performs at
+the level of Cohen's \(d\) in all condition but one, when the two groups
+come from the same empirical distribution, reflecting the bounded nature
+of the index.
+
+\begin{figure}[!t]
+
+\centering{
+
+\includegraphics{draft04_files/figure-latex/fig-NRMSEa-1.pdf}
+
+}
+
+\caption{\label{fig-NRMSEa}Normalized relative mean square error
+(without CLES) as a function of the experimental conditions.}
+
+\end{figure}%
+
+\subsubsection{Coverage}\label{coverage}
+
+The 90\% Coverage results (Figure~\ref{fig-coverage}) show how Cohen's
+\(d\) once more has good coverage in all scenarios, with \(\eta_p\) and
+CLES having the worst coverage across scenarios and \(\eta\) performing
+well in all scenarios, except in the two with \(\delta = 0\) and
+\(\sigma = 1\).
+
+\begin{figure}[!t]
+
+\centering{
+
+\includegraphics{draft04_files/figure-latex/fig-coverage-1.pdf}
+
+}
+
+\caption{\label{fig-coverage}Coverage 90\% as a function of the
+experimental conditions.}
+
+\end{figure}%
+
+\section{Discussion}\label{discussion}
+
+The simulation results demonstrate that the four effect-size indices
+that is, Cohen's d, the Common Language Effect Size (CLES), the
+Parametric Overlap derived from d (\(\eta_p\)), and the
+distribution-free Overlapping Index \(\eta\) do not constitute
+interchangeable descriptions of group or condition differences when
+distributions deviate from normality. Across all manipulated conditions
+(mean differences, variance ratios, skewness, and sample sizes), the
+indices separate into two functional families: mean-based location
+estimators (\(d\), CLES, \(\eta_p\)) and a distribution-sensitive
+overlap estimator (\(\eta\)). This separation reflects that the indices
+derived from \(d\) inherit all of its parametric assumptions, as
+suggested by Peng \& Chen (2014). However, the performance metrics show
+that this conceptual grouping does not imply equivalent inferential
+properties: although the three \(d\)-based indices behave similarly
+descriptively, they differ substantially in bias, stability, and
+coverage.
+
+Across the full simulation space, near-perfect correlations among \(d\),
+CLES, and \(\eta_p\) (\(\rho\) \textgreater{} .93) confirm their shared
+theoretical base. Each assumes that the primary quantity of interest is
+a standardized shift in location, with dispersion treated as nuisance or
+absorbed through pooled variance. CLES is mathematically linked to \(d\)
+under symmetry, and \(\eta_p\) is a deterministic transformation of
+\(d\) under normality, as corrected by Grice \& Barrett (2014). Thus,
+under approximately symmetric or mildly skewed distributions, all three
+indices encode the same latent structure, a rank-ordered monotonic
+recoding of mean distance. Nevertheless, thier performances differ:
+Cohen's \(d\) shows low bias across all conditions and high coverage,
+indicating that it is able to identify the true parameter, but CLES and
+\(\eta_p\) show biased estimates and low coverage in some conditions,
+demonstrating that a high empirical correlation with \(d\) does not
+guarantee accuracy or inferential validity.
+
+Out of the group, \(\eta\) diverges systematically from classical
+indices (\(r \in [ .42, .47 ]\)), not focusing structly on means but
+capturing a broader distributional difference. Performing at the level
+of Cohen's \(d\) for RMB, its weakest performance or RMSR emerges
+exactly under strict normality, probably due to the nature of the index.
+The index varies from \(0\), complete disjointment, and \(1\), complete
+overlap, but two empirical populations will never overlap exactly even
+with high sample size. Again, when the two populations parameters of
+mean and variance are identical (\(\delta\) = 0, \(\sigma\) = 1),
+particularly when they are completely the same, \(\eta\) shows low
+coverage, reflecting sensitivity to kernel estimation when true overlap
+is maximal.
+
+In practical use, \(\eta\) relies on kernel-based density estimation,
+which smooths fluctuations and mitigates outliers (Chen et al., 2021).
+Importantly, the overlapping package permits adjustment of the kernel
+function, introducing a controllable dimension of flexibility, what
+might be called a tailored robustness check, that allows \(\eta\) to
+adapt to diverse data structures.
+
+At last, Cohen's \(d\) is confirmed to be a robust tool to asses
+groups/conditions differences based on means. However, \(\eta\), rather
+than standardized mean differences, quantifies shared mass between
+empirical densities, thereby capturing distributional aspects ignored by
+\(d\)-based measures. Simulation evidence confirms that \(\eta\) remains
+unbiased even under strong variance heterogeneity (ratios of 3:1 or
+4:1), unlike \(\eta_p\) and CLES, whose estimates become distorted under
+such violations (Skidmore \& Thompson, 2013).
+
+These findings are especially relevant in Cognitive Psychology and
+Neuropsychology, where reaction-time (RT) distributions are typically
+right-skewed and long-tailed. In such datasets, \(d\) may be a
+meaningful effect size even when substantial portions of distributions
+do not overlap. Still, it tells only part of the story, overlooking
+shape characteristics preserved by \(\eta\) characteristics that can
+also bear interpretable functional significance in cognitive and
+neuropsychological frameworks. This empirical structure has been
+repeatedly observed in memory and attention studies, as illustrated by
+Osmon (2018). Under these conditions, critically using both \(d\) and
+\(\eta\) provides a more realistic quantification of divergence, where
+\(\eta\) is able to quantify differences that would be overlooked in
+cases of equal means, isolating distributional differences that
+mean-based indices obscure.
+
+A similar principle applies in clinical psychology, where symptom
+distributions are rarely normal (Rubio-Aparicio et al., 2018), and both
+floor effects in non-clinical populations and heavy right tails in
+clinical ones are common characteristics of symptom data (Haqiqatkhah et
+al., 2023). These asymmetries inflate pooled variance, leading
+traditional effect size measures such as Cohen's \(d\) and Common
+Language Effect Size (CLES) to underestimate the true separations
+between groups when distributions deviate from normality (Sun \& Cheung,
+2020). In such cases, Cohen's \(d\) would still be able to recover the
+true mean difference, but at the cost of theoretical vulnerability, not
+correctly identifying differences in skewness and lack of variance
+heterogeneity, which are valuable aspects of the data structure. In such
+cases their combination provides a balanced framework for inference
+(Hanel \& Mehler, 2019).
+
+Here, \(\eta\) enters not as a rival, but as a companion. Where \(d\)
+fixes its gaze upon the center, \(\eta\) listens to the contour to the
+way distributions overlap, diverge, and rejoin across the span of shape
+variation (Hedges \& Olkin, 2016). In doing so, it restores something
+that \(d\) leaves silent: the shape of difference. Their relationship is
+not one of substitution but of complementarity as two instruments,
+distinct in tone yet tuned to the same melody.
+
+Thus, the lesson is not that one index should prevail, but that both
+deserve to speak. \(d\) translates difference into the language of
+averages; \(\eta\) translates it into that of a broader concept of
+similarity between distributions. And somewhere between those two
+dialects between what is measured and what is experienced lies the truer
+inference, the quiet understanding that every distribution in
+psychology, like every life, bends a little away from symmetry.
+
+\section{Conclusion}\label{conclusion}
+
+Effect sizes should not be treated as interchangeable. When the
+scientific question concerns a simple shift in location and assumptions
+are reasonably satisfied, \(d\) represents an adequate and robust index,
+with very little bias and high coverage of the true parameter. But when
+such assumptions are not respected, and the question concerns
+distributional separation like tail behavior, heterogeneity,
+multimodality, or skew-driven divergence \(\eta\) provides the useful
+and complementary description. An index as \(\eta\) can capture
+differences that would otherwise be overlooked when merely focusing on
+means. With the support of an adequate data visualization process, those
+differences become even more clear to the researcher and allow for a
+more tailored interpretation.
+
+The simulation approach comparing effect size indexes employed here
+follows established methodological frameworks advocating controlled
+assumption violations to evaluate estimator performance (Zhao et al.,
+2020). The core emphasis of the present study here, is that no single
+effect-size metric suffices; robust interpretation depends on viewing
+several indices together and anchoring them to the shape and structure
+of the observed data. Simulations offer what empirical data cannot: a
+controlled environment for systematic stress testing. At the same time,
+it reflects the very distortions that shape real-world evidence,
+allowing us to understand how psychological effect-size indices hold or
+fail under those pressures.
+
+\section{References}\label{references}
+
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-akaike:1973}
+Akaike, H. (1973). {Information theory and an extension of the maximum
+likelihood principle}. In B. N. Petrov \& F. Csaki (Eds.), \emph{{Second
+International Symposium on Information Theory}} (pp. 267--281).
+
+\bibitem[\citeproctext]{ref-azzalini:1985}
+Azzalini, A. (1985). A class of distributions which includes the normal
+ones. \emph{Scandinavian Journal of Statistics}, 171--178.
+
+\bibitem[\citeproctext]{ref-burnham+anderson:2002}
+Burnham, K. P., \& Anderson, D. R. (2002). \emph{{Model {S}election and
+{M}ultimodel {I}nference: {A} {P}ractical {I}nformation-{T}heoretic
+{A}pproach}} (2nd ed.). Springer Science \& Business Media.
+
+\bibitem[\citeproctext]{ref-Chen:2021}
+Chen, X., Trafimow, D., Wang, T., Tong, T., \& Wang, C. (2021). {The APP
+Procedure for Estimating the Cohen's Effect Size}. \emph{Asian Journal
+of Economics and Banking}.
+
+\bibitem[\citeproctext]{ref-Cohen:1988}
+Cohen, J. (1988). \emph{{Statistical power analysis for the behavioral
+sciences}} (2nd ed.). Lawrence Erlbaum Associates, Hillsdale, NJ.
+
+\bibitem[\citeproctext]{ref-Grice:2014}
+Grice, J., \& Barrett, P. (2014). {A Note on Cohen's Overlapping
+Proportions of Normal Distributions}. \emph{Psychological Reports},
+\emph{115}, 741--747.
+
+\bibitem[\citeproctext]{ref-Hanel:2019}
+Hanel, P., \& Mehler, D. (2019). {Beyond Reporting Statistical
+Significance: Identifying Informative Effect Sizes to Improve Scientific
+Communication}. \emph{Public Understanding of Science}, \emph{28},
+468--485.
+
+\bibitem[\citeproctext]{ref-Haqiqatkhah:2023}
+Haqiqatkhah, M. M., Ryan, O., \& Hamaker, E. (2023). {Skewness and
+Staging: Does the Floor Effect Induce Bias in Multilevel AR(1) Models?}
+\emph{Multivariate Behavioral Research}, \emph{59}, 289--319.
+\url{https://doi.org/10.1080/00273171.2023.2254769}
+
+\bibitem[\citeproctext]{ref-Hedges:2016}
+Hedges, L., \& Olkin, I. (2016). {Overlap between treatment and control
+distributions as an effect size measure in experiments}.
+\emph{Psychological Methods}, \emph{21}(1), 61--68.
+\url{https://doi.org/10.1037/met0000042}
+
+\bibitem[\citeproctext]{ref-lakens:2013}
+Lakens, D. (2013). {Calculating and reporting effect sizes to facilitate
+cumulative science: A practical primer for t-tests and ANOVAs}.
+\emph{Frontiers in Psychology}, \emph{4}, 863.
+\url{https://doi.org/10.3389/fpsyg.2013.00863}
+
+\bibitem[\citeproctext]{ref-mastrich:2021}
+Mastrich, Z. (2021). {A review of common language effect size indicators
+to facilitate research interpretability}. \emph{Frontiers in
+Psychology}. \url{https://doi.org/10.3389/fpsyg.2021.648770}
+
+\bibitem[\citeproctext]{ref-mcgraw+wong:1992}
+McGraw, K. O., \& Wong, S. P. (1992). {A common language effect size
+statistic}. \emph{Psychological Bulletin}, \emph{111}(2), 361--365.
+\url{https://doi.org/10.1037/0033-2909.111.2.361}
+
+\bibitem[\citeproctext]{ref-Osmon:2018}
+Osmon, K., D. C. (2018). {Non-Gaussian distributional analyses of
+reaction times (RT): Improvements that increase efficacy of RT tasks for
+describing cognitive processes.} \emph{Neuropsychology Review},
+\emph{28}, 359--376.
+
+\bibitem[\citeproctext]{ref-pastore+calcagni:2019}
+Pastore, M., \& Calcagnì, A. (2019). {Measuring distribution
+similarities between samples: A distribution-free overlapping index}.
+\emph{Frontiers in Psychology}, \emph{10}, 1089.
+\url{https://doi.org/10.3389/fpsyg.2019.01089}
+
+\bibitem[\citeproctext]{ref-Peng:2014}
+Peng, C. Y., \& Chen, L. T. (2014). {Beyond Cohen's d: Alternative
+Effect Size Measures for Between-Subject Designs}. \emph{The Journal of
+Experimental Education}, \emph{82}, 22--50.
+
+\bibitem[\citeproctext]{ref-RubioAparicio:2018}
+Rubio-Aparicio, M., Marín-Martínez, F., Sánchez-Meca, J., \&
+López-López, J. (2018). {A methodological review of meta-analyses of the
+effectiveness of clinical psychology treatments}. \emph{Behavior
+Research Methods}, \emph{50}, 2057--2073.
+\url{https://doi.org/10.3758/s13428-017-0973-8}
+
+\bibitem[\citeproctext]{ref-Skidmore:2013}
+Skidmore, S. T., \& Thompson, B. (2013). {Bias and Precision of Some
+Classical ANOVA Effect Sizes When Assumptions Are Violated}.
+\emph{Behavior Research Methods}, \emph{45}, 536--546.
+
+\bibitem[\citeproctext]{ref-Sun:2020}
+Sun, R., \& Cheung, S. (2020). {The influence of nonnormality from
+primary studies on the standardized mean difference in meta-analysis}.
+\emph{Behavior Research Methods}, 1--16.
+\url{https://doi.org/10.3758/s13428-019-01334-x}
+
+\bibitem[\citeproctext]{ref-wagenmakers+farrell:2004}
+Wagenmakers, E.-J., \& Farrell, S. (2004). {AIC} model selection using
+{A}kaike weights. \emph{Psychonomic Bulletin \& Review}, \emph{11}(1),
+192--196.
+
+\bibitem[\citeproctext]{ref-Zhao:2020}
+Zhao, J., Sim, S., \& Kim, H.-M. (2020). {Statistical Inference of Some
+Effect Sizes}. \emph{Journal of the Korean Statistical Society},
+\emph{49}, 976--1007.
+
+\end{CSLReferences}
+
+
+
+
+\end{document}

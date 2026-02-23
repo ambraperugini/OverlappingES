@@ -1,0 +1,314 @@
+---
+title: "Revision Comments"
+format: html
+toc: true
+editor: source
+self-contained: true
+bibliography: overlapping.bib
+csl: apa.csl
+---
+
+# Reviewer 1
+
+Summary: This manuscript reports a simulation study comparing several closely related effect size indices under violations of normality and variance homogeneity.
+The results largely confirm well-established relationships among Cohen's d-based measures and show predictable performance degradation under assumption violations, offering limited conceptual or methodological novelty.
+The simulation design's realism and practical implications are questionable: one group is always generated from a perfectly normal distribution, distributional violations are imposed only on the second group, and no covariates are considered.
+Consequently, the findings apply mainly to idealized two-group experimental settings with full randomization and have limited relevance for the observational or covariate-adjusted analyses that characterize much of contemporary psychological research.
+
+::: {style="color: red;"}
+Dear reviewer, thank you for pointing out some limitations of our proposed work. We do agree that the simplicity of the simulation design could be improved, but this choice was made to control the number of scenarios that would othervise explode. We will in the future work on simulating data from two non-normal distributions and including cases of outliers. The timely request of a revision in two weeks makes it for us impossible to implement it now due to computational reasons.
+
+Regarding the limit of covariates, this is true also for cohen's d, which is nevertheless widely used in psychology. We argue that the overlapping index has already a whide use in psychology with the work of  @pastore+calcagni:2019 being cited over 300 times, with 120 citations strictly in the Psychological Sciences field. We still find your comment very valuable and will consider it in the next developments of the index. 
+:::
+
+Specific comments:
+
+In Section 2.4, the rationale for the choice of performance indices is unclear.
+In particular, the statement "we need indices that are not related to possible empirical values" is difficult to interpret and requires clarification.
+As written, it is not obvious what is meant by "possible empirical values," nor why this criterion motivates the use of Relative Mean Bias (RMB), Normalized RMSE, and Coverage.
+
+::: {style="color: red;"}
+Thank you for spotting an unclear passage of the manuscript. By “possible empirical values” we meant the numerical scale and boundedness of the effect size. To make this choice more straight-forward we revised the text as follows: "In order to compare estimator performance across conditions, we selected performance indices that are scale-free, that is, not sensitive to the magnitude or range of the underlying effect size. This choice is important because Cohen’s $d$ is unbounded and can take any real value, whereas the other indexes of interest are bounded between 0 and 1. As a consequence, performance measures defined on the raw scale would not be directly comparable across scenarios."
+:::
+
+I recommend rewriting Section 2.4 to more explicitly connect the performance indices to the simulation design and the definitions of selected effect sizes.
+Specifically, it would help readers if the authors clearly state, for each effect size, what the corresponding true population quantity is under a given scenario and how RMB, NRMSE, and Coverage are intended to evaluate recovery of that quantity.
+
+:::{style="color: red;"}
+We tried to improve clarity of how the true values are estimated in section 2.4 by adding the following paragraph: "For each condition $j=(\delta,\sigma,\alpha,n)$, each effect size targets its own population quantity $\theta_j$, computed from the known data-generating distributions. Specifically, Cohen's $d$ targets the standardized mean difference as reported in Equation @eq-d, computed from  the population means and standard deviations where $\mu_1 = 0$ and $\sigma_1^2 = 1$ and $\mu_2$ and $\sigma_2^2$ are the combinations described in @fig-simulationz. The parametric CLES and parametric overlap are deterministic functions of $d_j$.
+In contrast, the nonparametric overlap index targets the distributional overlap $\eta_j=\int_{\mathbb{R}^n}  min [f_1 (x),f_2 (x)] dx$ where $f_1$ is the $\mathcal{N}(0,1)$ density and $f_2$ is the skew-normal density under condition $j$. Performance indices (RMB, NRMSE, Coverage) therefore quantify how well each estimator recovers its own $\theta_j$ across Monte Carlo replications."
+:::
+
+The interpretation of "high coverage" requires more nuance.
+High coverage does not automatically imply good performance, particularly if it arises from overly wide confidence intervals.
+Moreover, the manuscript should clearly describe how confidence intervals are constructed for each effect size, especially for CLES and the nonparametric overlap index, for which interval estimation is known to be nontrivial.
+
+:::{style="color: red;"}
+We have now explicitly stated how they are constructed. In text now we defined coverage as follows:*"Coverage evaluates whether the inferential procedure is properly calibrated. For each condition $j$ and each replicate, we compute a two-sided 95\% confidence interval (CI) for the target parameter $\theta_j$ and record whether it contains the corresponding true value. Empirical coverage is then the proportion of replicates for which $\theta_j \in \mathrm{CI}$. In our implementation, CIs for Cohen's $d$ are obtained from \texttt{effectsize::cohens\_d}. For the nonparametric overlap $\eta$, we use a percentile bootstrap CI based on \texttt{overlapping::boot.overlap} with $B=200$ resamples, taking the $2.5^{th}$ and $97.5^{th}$ percentiles of the bootstrap distribution. For CLES and the parametric overlap, both defined as deterministic transformations of $d$, confidence intervals are obtained by applying the respective transformation to the lower and upper bounds of the 95\% CI for $d$. Specifically, with $[d_{\text{low}}, d_{\text{high}}]$ denoting the CI for $d$, the CI for CLES, defined as $\mathrm{CLES}=\Phi(|d|/\sqrt{2})$, is obtained by evaluating this expression at $d_{\text{low}}$ and $d_{\text{high}}$. Likewise, for the parametric overlap $\eta_p = 2\Phi(-|d|/2)$, the interval is obtained by evaluating the same function at the CI bounds of $d$ (with endpoints ordered appropriately due to monotonicity)."*
+:::
+
+In addition, the authors should justify the choice of a 90% nominal confidence level.
+Given the conventional use of a 5% significance level in psychology, a 95% interval would be more standard unless there is a specific methodological motivation for the 90% choice.
+
+:::{style="color: red;"}
+We have adopted 95% confidence intervals. Even though, as an arbitrary choice, 90% confidence intervals would just guarantee more stable coverage estimates.
+:::
+
+The motivations for the simulation design should be more explicitly grounded in realistic empirical settings in psychology.
+While reaction-time data are mentioned later in the Discussion, the connection between typical empirical data structures and the specific simulation choices (e.g., skewness only in one group while the other group is always perfectly normally distributed) should be made explicit earlier, ideally in Section 2.2.
+The authors should more clearly justify the decision to always generate one group from a standard normal distribution while varying skewness and variance only in the second group.
+Given that many psychological datasets (e.g., reaction-time data) exhibit skewness in both groups, it would be helpful to explain whether this asymmetric design reflects a substantive assumption or is simply a modeling convenience.
+
+:::{style="color: red;"}
+The choice is indeed to simplify the simulation design to avoid the explosion of possible combinations of parameters. But we value the comment and believe that future works could be more adherent to the true nature of psychological data in the way they are simulated. We still believe that the way the simulation is presented can offer valuable insight into testing the performance of the chosen effect sizes. We added the following sentence in Section 2.2: *"The choice of generating the first sample always from a Standard Normal distribution and to vary the second sample is made to keep under control the number of scenarios."*
+:::
+
+Figure 2 is difficult to interpret.
+The heavy overlap of points, lack of a clear legend mapping colors to sample sizes, and aggregation across all scenarios make it hard to extract meaningful information.
+In addition, the purpose of examining correlations across all scenarios and sample sizes simultaneously is unclear, as these factors are confounded in the visualization.
+I recommend either stratifying the figure by scenario/sample size or clarifying what inferential goal this figure serves beyond illustrating near-deterministic relationships among Cohen's d-based indices.
+
+:::{style="color: red;"}
+Che facciamo? anche reviewer 2 ha problemi con l'immagine, o la rimuoviamo o andrebbe rimessa la legenda come prima.
+:::
+
+For each simulation scenario, it is unclear how the "true" value of each effect size is defined.
+Because the indices target different aspects of the distributions (mean shift vs. overlap), they are not estimating the same population quantity.
+Please clarify whether bias is computed relative to each index's own population definition, and explicitly state what that definition is.
+In particular, in Figure 3, are biases computed relative to the population value of each index, or relative to a common benchmark such as a standardized location shift?
+
+:::{style="color: red;"}
+We appreciate the request for better clarity. This point should have been covered previously by replying to the comment on section 2.2.4.
+:::
+
+The manuscript would benefit from a clearer discussion of the distinction between parametric and nonparametric versions of the overlap and related indices.
+Several of the indices are deterministic or near-deterministic transformations of Cohen's d under normality.
+As such, it would be helpful to more explicitly explain what new information is gained by considering parametric versus nonparametric versions, beyond differences induced by assumption violations.
+
+Page 6, section 2.3.2, 1st paragraph: the first 2 sentences read repetitively while inconsistent.
+
+:::{style="color: red;"}
+We thank the reviewer for pointing out the discrepancy, we re-arranged the first two sentences as follow:*"CLES represents the probability that a randomly selected observation from one group will exceed a randomly selected observation from the other group [@mcgraw+wong:1992]. This index ranges from 0 to 1, with a value of 0.50 indicating complete overlap (no effect), values above 0.50 favoring one group, and below 0.50 favoring the other."*
+:::
+
+# Reviewer 2
+
+The paper presents the validation of an alternative effect size index (the overlap index) that considers the whole distribution of the samples.
+It finds that, measured with several indices, for normally distributed data, Cohen's d seems to be an appropriate index, while for nonnormal data or for some other scenarios (e.g., when variances seriously differ), the overlap index is more appropriate.
+Also, the two indices can be considered as two complementary indices capturing different aspects of the data.
+
+Overall, I sympathize with the idea of using effect size indices that consider the whole distribution when the data are not normal.
+Also, I think validation like this is an essential step before recommending the use of new indices.
+Overall, I recommend publication of the current work in Frontiers in Psychology.
+
+:::{style="color: red;"}
+We would like to thank the reviewer for finding value in our work and for all the useful comments that follow. We tried to implement them all when possible and doing so clearly improved clarity and consistency of our work.
+:::
+
+Before publishing the work, I recommend considering a few viewpoints that may help to clarify the justification of the work, clarifying some conceptual and technical details, and making the recommendations of the work more accessible.
+
+I think several details that are added to the Methods and Discussion section would fit the Introduction better: - The description of the effect size indices would be needed in the Introduction.
+Otherwise, if the reader is not familiar with any of them, they need to wait until the Methods section to understand them.
+
+- Similarly, the conceptual connections and relations of the indices from the Discussion could be moved to the Intro because these are already known details that the current work relies on.
+These can be considered as the basis of the expected patterns in the Results.
+
+- Also, the justification of the work (there are nonnormal data and other scenarios when Cohn's d and related indices may be inappropriate) is discussed in the Discussion, but it fits the Intro better because the justification of a work is needed before starting the work.
+
+:::{style="color: red;"}
+
+We thank the reviewer for identifying a more appropriate restructurization of the introduction. We have moved and added in the introduction the folling text: 
+
+*"These distributional concerns are especially relevant in cognitive and clinical research. Reaction-time (RT) data in cognitive tasks are typically right-skewed and long-tailed, a pattern repeatedly documented in memory and attention paradigms [@Osmon:2018]. Although effect sizes are often computed on participant-level summaries of RT (e.g., mean or slope across trials), these summaries can still retain marked asymmetry and heteroscedasticity, especially with limited trials, outliers, or strong individual differences. When group variances differ, alternative standardized mean difference indices have been proposed [@morris2008estimating] to capture a location shift, yet they may miss diagnostically meaningful differences that reside in the tails or in other shape features of the distributions. More generally, effect-size measures that explicitly incorporate distributional similarity can register divergences that are not reducible to mean differences, including cases in which group means are similar but distributions differ in skewness or dispersion.*
+
+*A similar motivation applies in clinical psychology, where symptom distributions are often non-normal and characterized by floor effects in non-clinical samples and heavy right tails in clinical populations [@RubioAparicio:2018; @Haqiqatkhah:2023]. Under these conditions, asymmetric dispersion can inflate pooled variance, potentially attenuating standardized mean differences and related $d$-based indices [@Sun:2020]. Taken together, these empirical settings motivate evaluating distribution-sensitive measures alongside classical mean-based effect sizes, with the goal of clarifying when $d$-derived indices remain adequate and when distribution-level information provides complementary insight into group separation [@Hanel:2019].*
+
+*These considerations motivate the present investigation, which evaluates classical mean-based indices alongside a distribution-sensitive alternative, the Overlapping Index. [...]*
+
+*Rather than assuming that mean-based indices suffice in all psychological data scenarios, we systematically examine how $d$, CLES, $\eta_p$, and the distribution-sensitive $\eta$ behave under controlled violations of symmetry and variance homogeneity. By embedding these indices within a common simulation framework, we aim to clarify when classical mean-based metrics remain adequate and when distribution-based overlap measures provide complementary or superior information.*
+
+*The present work compares the aforementioned four metrics: Cohen’s $d$, CLES, $\eta_p$, and $\eta$. Cohen’s d represents a standardized mean difference, expressing the distance between group means in units of pooled standard deviation. The Common Language Effect Size (CLES) can be expressed as a probability of superiority and, under normality, is a deterministic monotonic transformation of d. Likewise, the parametric overlap coefficient ($\eta_p$) is mathematically derived from d under the assumption of normality and equal variances. Thus, d, CLES, and $\eta_p$ encode essentially the same information in different scales. In contrast, the nonparametric overlapping index $\eta$ estimates the shared area between empirical density functions and does not rely on parametric information. Unlike d-based indices, $\eta$ is sensitive to differences in skewness, kurtosis, and tail structure.*
+
+*From a theoretical perspective, the four indices considered here fall into two conceptual families. Cohen’s $d$ represents a standardized difference in means, and both the Common Language Effect Size (CLES) and the parametric overlap coefficient ($\eta_p$) are deterministic transformations of $d$ under normality. Consequently, when distributions are symmetric and homoscedastic, $d$, CLES, and $\eta_p$ encode the same underlying quantity: a location shift expressed on different scales. Their numerical values are therefore monotonically related and highly correlated by construction.*
+
+*In contrast, the nonparametric overlapping index $\eta$ estimates the shared area between the empirical density functions of the two groups. Rather than summarizing a shift in central tendency, it quantifies distributional similarity directly and remains sensitive to differences in skewness, kurtosis, and tail structure. Thus, while $d$-based measures focus on standardized mean separation, $\eta$ captures the overall configuration of the distributions.*
+
+*Under approximate normality and variance homogeneity, the three $d$-based indices should behave similarly both descriptively and inferentially. However, when distributions deviate from symmetry or exhibit heteroscedasticity, indices derived from $d$ may remain mathematically linked yet differ in bias, precision, or coverage, and the distribution-sensitive $\eta$ may capture aspects of divergence not reflected in mean-based metrics."*
+
+And added in the methods a more detailed description of $eta$:
+
+*"The Overlapping Index defines the area intersected by two or more empirical density functions [@pastore+calcagni:2019]. This index varies from zero (complete disjointment) to one (complete overlap) and can be considered an index of similarity between groups/conditions.*
+
+*Assuming two probability density functions $f_A (x)$ and $f_B (x)$, the Overlapping Index $\eta: \mathbb{R}^n \times \mathbb{R}^n \to [0,1]$ is formally defined in the following way:*
+
+
+$$
+\eta(A,B) = \int_{\mathbb{R}^n} \min\{ f_A(x),\, f_B(x) \}\, dx
+$${#eq-eta}
+
+*where, in the discrete case, the integer can be replaced by summation. $\eta (A,B)$ is normalized to one and when the distributions of A and B do not have points in common, meaning that $f_A (x)$ and $f_B (x)$ are disjoint, $\eta (A,B) = 0$."*
+
+:::
+
+I'm not sure about some of the justifications the authors provided in their description.
+- I agree that reaction time trial data show a strongly skewed distribution, but usually these data are not analyzed when calculating effect size, but some summary (e.g., mean, slope) of the trials is used, and those statistics do not necessarily show the skewed nature of the trials.
+
+:::{style="color: red;"}
+
+We thank the reviewer for this clarification. We revised the Introduction to note that effect sizes are typically computed on participant-level summary measures of RT (e.g., means or slopes), rather than raw trial-level RTs, and we softened our wording accordingly. We also note that these summaries may nonetheless retain asymmetry and heteroscedasticity under common conditions (e.g., limited trials or strong individual differences), motivating our focus on distribution-sensitive indices. 
+Specific sentence added to the manuscript: *"Although effect sizes are often computed on participant-level summaries of RT (e.g., mean or slope across trials), these summaries can still retain marked asymmetry and heteroscedasticity, especially with limited trials, outliers, or strong individual differences."*
+
+:::
+
+- When the variance of the two groups differs, modified Cohen's d indices are available, where, e.g., the SD of the control group is considered.
+This may also be mentioned in the manuscript.
+
+:::{style="color: red;"}
+
+We incorporated it in the introduction in the following way: *"When group variances differ, alternative standardized mean difference indices have been proposed [@morris2008estimating] to capture a location shift, yet they may miss diagnostically meaningful differences that reside in the tails or in other shape features of the distributions."*
+
+:::
+
+- I agree with the authors that ceiling and floor effects, or neuropsychological patients and neurodevelopmental issues can be valid examples where Cohen d's may be suboptimal.
+
+- The authors mention that some effect sizes have assumptions.
+I'm not sure if descriptive statistics can have assumptions.
+I think some inferential statistics can have assumptions because some procedures are created with some assumptions, and violating them would invalidate the procedure.
+For example, consider the mean.
+When it is applied in hypothesis tests, confidence interval calculations, etc., sometimes it is assumed that the data are normally distributed.
+However, when the mean is calculated, would it make sense to have this assumption?
+Clearly, the mean can always be calculated; it is a kind of location index.
+Surely, outliers have stronger effects on the mean than values closer to it, but still, it is an index that can tell something about the location of the dataset.
+Similarly, consider Cohen's d, which tells the effect size where the unit is standardized and the new standardized unit is the SD.
+Similarly, while the SD may be more influenced by outliers, it wouldn't invalidate the interpretation that our new scale has the SD unit, and the effect size is expressed in these new units.
+So my point that the issue is not that Cohen's d has assumptions that could be violated, but SD works somewhat differently when the data are e.g., normally distributed than when they are not (or at least, assuming normal distribution could add extra information about the interpretation of the effect size; e.g., a specific d value can tell the size of the overlap of the two distributions when normality applies).
+Overall, my recommendation is that the text may refer to various distributions or properties where the interpretation of the d is less straightforward or more misleading than other indices.
+
+:::{style="color: red;"}
+
+We thank the reviewer for this important conceptual clarification. We agree that effect-size indices such as the mean or Cohen’s $d$ are always computable and, in that sense, are not “invalidated” by nonnormality. We revised the phrasing of the manuscript to shift away from an incorrect citation of assumptions and rather to clarify ideal scenarios (actual difference only in location) where cohen's d based metrics are ideal vs. scenarios where a focus merely on means would miss out on other differences.
+
+:::
+
+There are some details that may be added to the text; otherwise, the manuscript is not entirely understandable or accessible.
+- Critically, the overlap index is hardly described.
+I agree that all details of the calculation procedure may not be necessary here, but a few sentences or even 2-3 paragraphs are needed.
+After all, it is the main subject of this work.
+
+:::{style="color: red;"}
+We thank the reviewer for pointing out this hole in the manuscript, as mentioned in a previous reply, we added a clear description of the index.
+:::
+
+- Also, the authors may add a brief description of their R package that can calculate this index.
+Currently, as far as I see, the package is mentioned only in a single sentence, where it is not even explained that the "package" refers to an R package.
+Also, a few lines of code presenting its use could be useful to provide practical recommendations to the reader.
+
+:::{style="color: red;"}
+We have added a clear sentence on the r package where we explain in detail the index: *"The computation of the index is implemented in the \texttt{overlapping} R package [@overlapping:package]."* But we do not find appropriate to further give examples on the use as this is not a tutorial on the package and the reader can access the manual or the manuscript of @pastore+calcagni:2019 for a detailed explanation on the usage of the functions.
+:::
+
+- Relatedly, some more didactic recommendations could be provided for the readers, that is, if a reader is convinced by the use of the overlap index, how should they use it?
+For example, (this is my understanding based on the manuscript and my other considerations) (1) one should visualize the data to make sure to understand main features of the distribution, (2a) if the data are reasonably normal, then Cohen's d is a useful effect size index, (2b) if the data are not normal or other properties make Cohen's d less optimal, overlap index can be reported, (2c) or both indices could be reported, for example, if the distributions can not be evaluated clearly (like in many studies with large effect size, where the sample size can be relatively small), or if one wants to present effect size index for nonnormal data that can be compared with previously reported d values, or if d value is needed for power analysis, etc. 
+
+:::{style="color: red;"}
+We thank the reviewer for asking this valuable addition to the manuscript. We have added the following paragraph in the Discussion: *"More practically, we recommend that researchers follow a simple set of steps when choosing between mean-based and overlap-based effect sizes. First, visualize the data (i.e. density/violin plots) and compute basic descriptive statistics (mean, median, variance, skewness, and kurtosis). Second, use this information to decide how to summarize group differences. When the distributions are clearly non-normal or differ in shape (e.g., skewness, tail behavior) and a mean-based index would miss substantively relevant dissimilarities, reporting the overlap index $\eta$ provides a distribution-sensitive summary. When the research question still centers on mean separation (or comparability with prior work), reporting Cohen’s $d$ together with $\eta$ can offer a clearer picture by combining a location-based effect size with a distribution-based measure of similarity. Finally, when distributions are approximately symmetric and variances are comparable and the scientific focus is a location shift, Cohen’s $d$ alone may be sufficient. In all cases, we recommend reporting uncertainty (95\% CIs), using standard analytic intervals for $d$ and bootstrap-based intervals for $\eta$."*
+:::
+
+- Some information is missing from the paper.
+- For example, in Figure 2, which color means which sample size?
+I guess the largest areas and the least peaky distributions is the smallest samples size, but an explicit description is needed.
+(Also, I could see 4 colors, while there were 6 size conditions. Maybe other colors could be used, too, if there were really 6 colors there.) 
+
+:::{style="color: red;"}
+PROF. CHE FACCIAMO? IO LA TOGLIEREI FORSE, SE NON SI PUO' TENERE LA FIGURA PIU' COMPLETA
+:::
+
+- In equation 4, how do we know the value of alpha, if we rely only on the observed data?
+
+:::{style="color: red;"}
+Dear reviewer, $\alpha$ here should not be intended as the alpha level, but as a parameter of the Skew-Normal, as reported in text *"$\alpha$ is related to the skewness of the distribution"*. We hope that we clarified the confusion.
+:::
+
+- In Figure 1, what is sigma, and what is omega?
+What is the difference between them?
+I'm sure that checking the specific values and figures can help find this out, but this information should be explicit, and first, I found only that both of them are SD and scale parameters that are conceptually similar.
+
+
+:::{style="color: red;"}
+We tried to clarify the figure by adding an extra explanation in the label: *"Here $\delta$ is the mean difference and $\sigma$ is the target SD of the second population; when $\alpha\neq0$, the skew-normal location and scale $(\xi,\omega)$ differ from the mean and standard deviation and are obtained by transforming $(\delta,\sigma,\alpha)$ using @eq-xiomegaSN."*
+:::
+
+- In section 2.3.2, if CLES is defined as comparing the group with larger values to the group with smaller values, then the value can be only smaller (or larger) than 0.5; therefore, the sentence above formula 6 wouldn't make sense.
+
+:::{style="color: red;"}
+As an issue with that part of the manuscript was pointed out by the other reviewer, we changed the texrt as follows: *"CLES represents the probability that a randomly selected observation from one group will exceed a randomly selected observation from the other group [@mcgraw+wong:1992]. This index ranges from 0 to 1, with a value of 0.50 indicating complete overlap (no effect), values above 0.50 favoring one group, and below 0.50 favoring the other."*
+:::
+
+- In the RMB definition formula, what is B?
+
+:::{style="color: red;"}
+Thank you for asking, we should have been more meticulous in the description of the formulas: " - *Relative mean bias* (RMB) captures the average proportional deviation between an estimator and its population value across Monte Carlo replications. It is defined as
+$$
+   RMB = (1/B) \sum_b \left[ (\hat{\theta}_{bj} − \theta_j) / \theta_j \right].
+$$
+where $B$ is the number of replications,  $\theta_j$ is the true parameter value in condition $j$ and $\hat{\theta}_{bj}$ is the estimated value in the $b$ replication for condition $j$."
+:::
+
+- Also, I was not sure how performance indices were calculated.
+Is it the contrast of the calculated effect size based on the sample and the effect size of the population?
+First, based on the description, I thought that the parameters of the distributions are used, but then I'm not sure how these parameters can be related to the specific effect sizes.
+
+:::{style="color: red;"}
+We apoliogize for not being clear, we added an explanation in the Performance Indexes section:
+"*In order to compare estimator performance across conditions, we selected performance indices that are scale-free, that is, not sensitive to the magnitude or range of the underlying effect size. This choice is important because Cohen’s $d$ is unbounded and can take any real value, whereas the other indexes of interest are bounded between 0 and 1. As a consequence, performance measures defined on the raw scale would not be directly comparable across scenarios.*
+
+*For each condition $j=(\delta,\sigma,\alpha,n)$, each effect size targets its own population quantity $\theta_j$, computed from the known data-generating distributions. Specifically, Cohen's $d$ targets the standardized mean difference as reported in Equation @eq-d, computed from  the population means and standard deviations where $\mu_1 = 0$ and $\sigma_1^2 = 1$ and $\mu_2$ and $\sigma_2^2$ are the combinations described in @fig-simulationz. The parametric CLES and parametric overlap are deterministic functions of $d_j$.*
+
+*In contrast, the nonparametric overlap index targets the distributional overlap $\eta_j=\int_{\mathbb{R}^n}  min [f_1 (x),f_2 (x)] dx$ where $f_1$ is the $\mathcal{N}(0,1)$ density and $f_2$ is the skew-normal density under condition $j$. Performance indices (RMB, NRMSE, Coverage) therefore quantify how well each estimator recovers its own $\theta_j$ across Monte Carlo replications.*"
+:::
+
+Relatedly, then I'm not sure what is the role or relevance of formula 4?
+Also, what is the RMSE?
+I mean, what is the value the RMSE is calculated for?
+
+:::{style="color: red;"}
+Thank you for asking, we clarified as follow:
+" - *Normalized root mean square error* (NRMSE) extends this scale-free approach to overall estimation error. It is simply derived from the Root Mean Square Error (RMSE) index dividing it by the empirical range of observed estimates,
+$$
+   NRMSE = RMSE / (max(obs) − min(obs)),
+$$
+
+where $\max(\mathrm{obs})-\min(\mathrm{obs})$ is the empirical range of the $B$ estimates $\{\hat{\theta}_{bj}\}_{b=1}^{B}$ under condition $j$ and RMSE is:
+
+$$
+\mathrm{RMSE}=\sqrt{\frac{1}{B}\sum_{b=1}^{B}\left(\hat{\theta}_{bj}-\theta_j\right)^2},
+$$
+where $B$ is the number of replications, $\hat{\theta}_{bj}$ is the estimate in replication $b$ under condition $j$, and $\theta_j$ is the corresponding true value. As with RMB, lower values indicate better performance."
+:::
+
+- If the script of the simulation were available publicly, that would help the usefulness of this work considerably.
+
+:::{style="color: red;"}
+We also value Open Science practices and we uploaded as Supplementary Materials the script. **O MEGLIO GITHUB/OSF?**
+:::
+
+I was not sure if I understood some of the calculations.
+- One important finding is that while the three classic effect sizes strongly correlate, they show different appropriateness measured with the performance indices.
+This seems to be a contradiction: if they strongly correlate, shouldn't they show similar performance?
+My understanding is that the two calculations handle the data differently: the correlation handles all parameter and sample size conditions together, while the performance calculation handles these conditions separately.
+For comparability, I think these calculations should be done similarly; otherwise, the contrast of the correlation and performance wouldn't make sense.
+
+:::{style="color: red;"}
+Dear reviewer, high descriptive association among indices does not imply equal estimator performance. The correlations are indeed computed by pooling estimates across all scenarios and sample sizes; because CLES and $\eta_p$ are transformations of $d$ under parametric conditions, the three indices preserve rank order and therefore exhibit high correlations when aggregated. In contrast, RMB, NRMSE, and Coverage are computed separately within each condition $j$ and quantify how accurately each estimator (and its associated CI procedure) recovers its own population target $\theta_j$. Consequently, two indices can be strongly correlated across pooled conditions while differing in bias, precision, or interval calibration within specific scenarios, particularly when transformations amplify small errors, when estimators are bounded (CLES, $\eta_p$), or when distributional departures affect the inferential procedure differently.
+:::
+
+- I was not sure what kind of correlation was calculated.
+If no other details are mentioned, psychological texts mean Pearson correlation.
+However, the string nonlinear relations shown in Figure 2 cannot be \>0.9 values.
+
+:::{style="color: red;"}
+Dobbiamo sistemare l'immagine! e poi rispondere eventualmente.
+:::
+
+
+

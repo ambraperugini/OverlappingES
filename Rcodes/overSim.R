@@ -2,10 +2,23 @@
 rm(list = ls())
 set.seed(1)
 
-#setwd("/mnt/data/users/massimiliano.pastore")
-setwd("/home/cox/MEGA/lavori/overlapping/")
+setwd("/mnt/data/users/massimiliano.pastore")
+#setwd("/home/cox/MEGA/lavori/overlapping/")
+setwd("/home/definetti/MEGA/lavori/overlapping/")
 datadir <- "data/"
 
+## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+## Simulation parameters
+B <- 2000
+N_boot <- 500
+LEVEL <- .95 # confidence level
+PROBS <- c( (1-LEVEL)/2,1-(1-LEVEL)/2 )
+PARlist <- list(
+  n_vec = c(10,50,100,300,500,1000),
+  delta_vec = c(0, 2),
+  sigma_vec = c(1, 5),
+  alpha_vec = c(0, 10)
+)
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ### Functions
@@ -97,6 +110,13 @@ CLES_IC <- function(x1, x2, alpha = .9 ) {
   return(list(CLES = CLES, IC = c(IC_lower, IC_upper)))
 }
 
+true_CLES_OV <- function( true_d ) {
+  true_CLES <- pnorm( abs(true_d) / sqrt(2) )
+  true_OV <- 2*pnorm( (abs(true_d)*(-1)) / 2 )
+  
+  return(list(true_CLES = true_CLES, true_OV = true_OV ))
+} 
+
 
 ## 
 core_sim <- function( DESIGN, B = 10 ) {  
@@ -109,21 +129,26 @@ core_sim <- function( DESIGN, B = 10 ) {
   delta <- DESIGN$xi 
   alpha <- DESIGN$alpha 
   omega <- DESIGN$omega
+  condition <- DESIGN$K
   
   # calcolo mu e sigma
   MUSI <- snpar(xi = delta, omega = omega, alpha = alpha)
   
-  cat( paste0( "n = ",n,"; mu = ",round(MUSI$mu,1), 
+  cat( paste0( "condition ",condition, ": n = ",n,"; mu = ",round(MUSI$mu,1), 
                "; sigma = ",round(MUSI$sigma,2),"; alpha = ",
                round(alpha,2) ),"\n")
   
   # true population overlap
-  true_overlap <- integrate( min_dskew_normal, -Inf, Inf, xi = delta, alpha = alpha, 
-                             omega = omega )$value
+  true_overlap <- integrate( min_dskew_normal, -Inf, Inf, 
+                                xi = delta, alpha = alpha, 
+                                omega = omega )$value
   
   # true population Cohen's d
   true_d <- true_cohen( mu1 = 0, mu2 = MUSI$mu, sigma1 = 1, 
                         sigma2 = MUSI$sigma )
+  
+  # true CLES and OV
+  true_cles_ov <- true_CLES_OV( true_d )
   
   # data simulation
   t( sapply(1:B, function(b){
@@ -136,36 +161,31 @@ core_sim <- function( DESIGN, B = 10 ) {
     
     ETA1 <- overlap(list(y1,y2))$OV
     ETA2 <- overlap(list(y1,y2), type = "2" )$OV
-    COHEN <- cohens_d(y1,y2, ci = .9)
-    CLES <- d_to_overlap(COHEN$Cohens_d)
-    COHEN_CI_low <- COHEN$CI_low
-    COHEN_CI_high <- COHEN$CI_high
-    ETA_boot <- boot.overlap( list(y1,y2), B = 200 )
-    ETA_CI <- quantile( ETA_boot$OVboot_dist, probs = c(.05,.95))
+    COHEN <- cohens_d(y1,y2, ci = LEVEL )
+    OV <- p_overlap( y1, y2, ci = LEVEL )
+    
+    ETA_boot <- boot.overlap( list(y1,y2), B = N_boot )
+    ETA1_CI <- quantile( ETA_boot$OVboot_dist, probs = PROBS )
+    ETA_boot <- boot.overlap( list(y1,y2), B = N_boot, type = "2" )
+    ETA2_CI <- quantile( ETA_boot$OVboot_dist, probs = PROBS )
+    cles_ic <- CLES_IC( y1, y2, alpha = LEVEL )
     
     output <- c( mx1, sx1, mx2, sx2, ETA1, ETA2, n, 
                  delta, alpha, omega, 
-                 true_overlap, true_d, COHEN$Cohens_d, CLES, 
-                 COHEN_CI_low, COHEN_CI_high, ETA_CI[1], ETA_CI[2])
+                 true_overlap, true_d, COHEN$Cohens_d, OV$Overlap, 
+                 COHEN$CI_low, COHEN$CI_high, ETA1_CI[1], ETA1_CI[2], 
+                 ETA2_CI[1], ETA2_CI[2], 
+                 cles_ic$CLES, cles_ic$IC[1], cles_ic$IC[2],
+                 OV$CI_low, OV$CI_high)
     names(output) <- c( "mx1", "sx1", "mx2", "sx2", "eta1", "eta2", "n",
                         "xi","alpha","omega", 
-                        "true_overlap", "true_d","Cohens_d","cles",
+                        "true_overlap", "true_d","Cohens_d","OV",
                         "Cohen_low","Cohen_high",
-                        "eta_low", "eta_high")
+                        "eta1_low", "eta1_high","eta2_low", "eta2_high",
+                        "Cles","Cles_low","Cles_high","OV_low","OV_high")
     return(output)  
   }) )
 }
-
-
-## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-## Parameters
-B <- 10 #500
-PARlist <- list(
-  n_vec = c(10,50,100,300,500,1000),
-  delta_vec = c(0, 2),
-  sigma_vec = c(1, 5),
-  alpha_vec = c(0, 10)
-)
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ## Prepare Design
@@ -183,6 +203,7 @@ for (n in PARlist$n_vec) {
   DD$n <- n
   DESIGN <- rbind(DESIGN,DD)
 }
+DESIGN$K <- 1:nrow(DESIGN)
 DESIGN <- apply(DESIGN, 1, as.list)
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -204,5 +225,5 @@ ALL$rbias_eta2 <- with( ALL, (eta2 - true_overlap)/true_overlap )
 ALL$rbias_d <- with( ALL, 
                      relative_mean_bias(Cohens_d, true_d ))
 
-save(ALL, INIZIO, FINE,  file = paste0(datadir, "ALL.rda") )  
+save(ALL, INIZIO, B, PARlist, FINE,  file = paste0(datadir, "exp2601.rda") )  
 
