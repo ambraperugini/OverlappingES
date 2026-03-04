@@ -186,6 +186,49 @@ CLES_IC <- function(x1, x2, alpha = .9, alternative = c("lower","greater") ) {
   return(list(CLES = CLES, IC = c(IC_lower, IC_upper)))
 }
 
+
+# +++++++++ default colour function
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+## +++++++++++++++++++++++++++++++++++++++++++
+#' #' @title Correlation plot
+#' @param RR Correlation matrix.
+#' @param U Vector specifying the plot margins.
+plot_correlation <- function(RR, values=FALSE, textsize=12, legendsize=10, angle=0,
+                             corrsize=4, U=c(0,0,0,0), short.names=FALSE) {
+  require(ggplot2)
+  require(reshape2)
+
+  RRm <- melt(RR)
+
+  RRm$Var1 <- factor(RRm$Var1, levels = labs_chr)
+  RRm$Var2 <- factor(RRm$Var2, levels = labs_chr)
+
+  GGcor <- ggplot(RRm, aes(Var2, Var1, fill=value)) +
+    geom_tile() +
+    scale_fill_gradient2(low="blue", high="red", mid="white", midpoint=0,
+                         space="Lab", name="Correlation") +
+    scale_x_discrete(limits = labs_chr, labels = labs_expr) +
+    scale_y_discrete(limits = rev(labs_chr),labels = labs_expr) +
+    xlab("") + ylab("") + coord_fixed() +
+    theme(plot.margin = unit(U, "cm"),
+          text=element_text(size=textsize),
+          axis.text.x=element_text(angle=angle),
+          legend.text = element_text(size = legendsize),
+          legend.title = element_text(size = legendsize))
+
+  if (values) {
+    GGcor <- GGcor + geom_text(aes(label = round(value, 2)),
+                              color="black", size=corrsize)
+  }
+
+  print(GGcor)
+}
+
+
 ```
 
 ```{r}
@@ -237,9 +280,9 @@ Researchers often behave as if a single number could capture the entire contrast
 
 Yet the distributions underlying psychological data rarely obey this ideal. Even in purely simulated scenarios, once asymmetry, variance heterogeneity, and modest or large mean shifts are introduced, the data no longer present a single clean contrast in location. Skewed distributions, heavy right tails, and unequal dispersions create conditions where the “same” effect, expressed as a standardized mean difference, may emerge from very different shapes. Metrics that compress the entire contrast into a standardized difference in means can then misrepresent how groups truly diverge: they may be accurate about a central shift while remaining blind to the structure of the tails or to the degree of overlap between distributions.
 
-\textcolor{red}{These distributional concerns are especially relevant in cognitive and clinical research. Reaction-time (RT) data in cognitive tasks are typically right-skewed and long-tailed, a pattern repeatedly documented in memory and attention paradigms [@Osmon:2018]. Although effect sizes are often computed on participant-level summaries of RT (e.g., mean or slope across trials), these summaries can still retain marked asymmetry and heteroscedasticity, especially with limited trials, outliers, or strong individual differences. When group variances differ, alternative standardized mean difference indices have been proposed [@morris2008estimating] to capture a location shift, yet they may miss diagnostically meaningful differences that reside in the tails or in other shape features of the distributions. More generally, effect-size measures that explicitly incorporate distributional similarity can register divergences that are not reducible to mean differences, including cases in which group means are similar but distributions differ in skewness or dispersion.}
+\textcolor{red}{These distributional concerns are especially relevant in cognitive and clinical research. Reaction-time (RT) data in cognitive tasks are typically right-skewed and long-tailed, a pattern repeatedly documented in memory and attention paradigms} [@Osmon:2018]. \textcolor{red}{Although effect sizes are often computed on participant-level summaries of RT (e.g., mean or slope across trials), these summaries can still retain marked asymmetry and heteroscedasticity, especially with limited trials, outliers, or strong individual differences. When group variances differ, alternative standardized mean difference indices have been proposed} [@morris2008estimating] \textcolor{red}{to capture a location shift, yet they may miss diagnostically meaningful differences that reside in the tails or in other shape features of the distributions. More generally, effect-size measures that explicitly incorporate distributional similarity can register divergences that are not reducible to mean differences, including cases in which group means are similar but distributions differ in skewness or dispersion.}
 
-\textcolor{red}{A similar motivation applies in clinical psychology, where symptom distributions are often non-normal and characterized by floor effects in non-clinical samples and heavy right tails in clinical populations [@RubioAparicio:2018; @Haqiqatkhah:2023]. Under these conditions, asymmetric dispersion can inflate pooled variance, potentially attenuating standardized mean differences and related $d$-based indices [@Sun:2020]. Taken together, these empirical settings motivate evaluating distribution-sensitive measures alongside classical mean-based effect sizes, with the goal of clarifying when $d$-derived indices remain adequate and when distribution-level information provides complementary insight into group separation [@Hanel:2019].}
+\textcolor{red}{A similar motivation applies in clinical psychology, where symptom distributions are often non-normal and characterized by floor effects in non-clinical samples and heavy right tails in clinical populations }[@RubioAparicio:2018; @Haqiqatkhah:2023]. \textcolor{red}{Under these conditions, asymmetric dispersion can inflate pooled variance, potentially attenuating standardized mean differences and related $d$-based indices} [@Sun:2020]. \textcolor{red}{Taken together, these empirical settings motivate evaluating distribution-sensitive measures alongside classical mean-based effect sizes, with the goal of clarifying when $d$-derived indices remain adequate and when distribution-level information provides complementary insight into group separation} [@Hanel:2019].
 
 \textcolor{red}{These considerations motivate the present investigation, which evaluates classical mean-based indices alongside a distribution-sensitive alternative, the Overlapping Index.} As defined by @pastore+calcagni:2019, the Overlapping Index ($\eta$) formalizes a distribution-sensitive perspective by quantifying how much two empirical density functions intersect. Unlike parametric overlap measures derived from Cohen’s $d$ (such as the Parametric Overlap, $\eta_p$), $\eta$ does not rely on normality or equal variances and can register differences that live in skewness, kurtosis, or tail behavior. 
 
@@ -333,7 +376,7 @@ if (length(TIKZplot)>0) {
 
 ```
 
-`r label1` displays the experimental scenarios: the black curves correspond to the first population, consistently modeled as $\mathcal{SN}(0,1,0) \equiv N(0,1)$, whereas the red curves represent the second population $\mathcal{SN}(\xi,\omega,\alpha)$. The vertical dashed lines indicate the means of these second distributions and also the mean difference, $\delta$. \textcolor{red}{Here $\delta$ is the mean difference and $\sigma$ is the target SD of the second population; when $\alpha\neq0$, the skew-normal location and scale $(\xi,\omega)$ differ from the mean and standard deviation and are obtained by transforming $(\delta,\sigma,\alpha)$ using @eq-xiomegaSN.} 
+`r label1` displays the experimental scenarios: the black curves correspond to the first population, consistently modeled as $\mathcal{SN}(0,1,0) \equiv N(0,1)$, whereas the red curves represent the second population $\mathcal{SN}(\xi,\omega,\alpha)$. The vertical dashed lines indicate the means of these second distributions and also the mean difference, $\delta$. \textcolor{red}{Here $\delta$ is the mean difference and $\sigma$ is the target SD of the second population; when $\alpha\neq0$, the skew-normal location and scale $(\xi,\omega)$ differ from the mean and standard deviation and are obtained by transforming $(\delta,\sigma,\alpha)$ using} @eq-xiomegaSN. 
 
 
 ```{r, eval=TIKZplot}
@@ -433,7 +476,7 @@ where ${s_p}$ is the pooled standard deviation defined as $s_p = \sqrt{\frac{(n_
 
 ### Common Language Effect Size (CLES):
 
-\textcolor{red}{CLES represents the probability that a randomly selected observation from one group will exceed a randomly selected observation from the other group [@mcgraw+wong:1992]. This index ranges from 0 to 1, with a value of 0.50 indicating complete overlap (no effect), values above 0.50 favoring one group, and below 0.50 favoring the other.} Calculated from data the formula is: 
+\textcolor{red}{CLES represents the probability that a randomly selected observation from one group will exceed a randomly selected observation from the other group} [@mcgraw+wong:1992]. \textcolor{red}{This index ranges from 0 to 1, with a value of 0.50 indicating complete overlap (no effect), values above 0.50 favoring one group, and below 0.50 favoring the other.} Calculated from data the formula is: 
 
 $$
 CL = \frac{N_1}{N_1+N_0}
@@ -461,7 +504,7 @@ where $\Phi$ is the normal cumulative distribution function.
 
 ### The Overlapping Index
 
-The *non-parametric* version ($\eta$) is computed using a kernel approach and serves as a distribution-free approximation of $\eta_p$. \textcolor{red}{The Overlapping Index defines the area intersected by two or more empirical density functions [@pastore+calcagni:2019]. This index varies from zero (complete disjointment) to one (complete overlap) and can be considered an index of similarity between groups/conditions.}
+The *non-parametric* version ($\eta$) is computed using a kernel approach and serves as a distribution-free approximation of $\eta_p$. \textcolor{red}{The Overlapping Index defines the area intersected by two or more empirical density functions} [@pastore+calcagni:2019]. \textcolor{red}{This index varies from zero (complete disjointment) to one (complete overlap) and can be considered an index of similarity between groups/conditions.}
 
 \textcolor{red}{Assuming two probability density functions $f_A (x)$ and $f_B (x)$, the Overlapping Index $\eta: \mathbb{R}^n \times \mathbb{R}^n \to [0,1]$ is formally defined in the following way:}
 
@@ -472,13 +515,13 @@ $${#eq-eta}
 
 \textcolor{red}{where, in the discrete case, the integer can be replaced by summation. $\eta (A,B)$ is normalized to one and when the distributions of A and B do not have points in common, meaning that $f_A (x)$ and $f_B (x)$ are disjoint, $\eta (A,B) = 0$.}
 
-\textcolor{red}{The computation of the index is implemented in the \texttt{overlapping} R package [@overlapping:package].}
+\textcolor{red}{The computation of the index is implemented in the \texttt{overlapping} R package} [@overlapping:package].
 
 ## Performance Indexes for comparison
 
-\textcolor{red}{In order to compare estimator performance across conditions, we selected performance indices that are scale-free, that is, not sensitive to the magnitude or range of the underlying effect size. This choice is important because Cohen’s $d$ is unbounded and can take any real value, whereas the other indexes of interest are bounded between 0 and 1. As a consequence, performance measures defined on the raw scale would not be directly comparable across scenarios.} 
+\textcolor{red}{In order to compare effect size estimators performance across conditions, we selected performance indices that are scale-free, that is, not sensitive to the magnitude or range of the underlying effect size. This choice is important because Cohen’s $d$ is unbounded and can take any real value, whereas the other indexes of interest are bounded between 0 and 1. As a consequence, performance measures defined on the raw scale would not be directly comparable across scenarios.} 
 
-\textcolor{red}{For each condition $j=(\delta,\sigma,\alpha,n)$, each effect size targets its own population quantity $\theta_j$, computed from the known data-generating distributions. Specifically, Cohen's $d$ targets the standardized mean difference as reported in Equation @eq-d, computed from  the population means and standard deviations where $\mu_1 = 0$ and $\sigma_1^2 = 1$ and $\mu_2$ and $\sigma_2^2$ are the combinations described in @fig-simulationz. The parametric CLES and parametric overlap are deterministic functions of $d_j$.}
+\textcolor{red}{For each condition $j=(\delta,\sigma,\alpha,n)$, each effect size targets its own population quantity $\theta_j$, computed from the known data-generating distributions. Specifically, Cohen's $d$ targets the standardized mean difference as reported in} @eq-d, \textcolor{red}{computed from  the population means and standard deviations where $\mu_1 = 0$ and $\sigma_1^2 = 1$ and $\mu_2$ and $\sigma_2^2$ are the combinations described in @fig-simulationz. The parametric CLES and parametric overlap are deterministic functions of $d_j$.}
 
 \textcolor{red}{In contrast, the nonparametric overlap index targets the distributional overlap $\eta_j=\int_{\mathbb{R}^n}  min [f_1 (x),f_2 (x)] dx$ where $f_1$ is the $\mathcal{N}(0,1)$ density and $f_2$ is the skew-normal density under condition $j$. Performance indices (RMB, NRMSE, Coverage) therefore quantify how well each estimator recovers its own $\theta_j$ across Monte Carlo replications.}
 
@@ -488,7 +531,7 @@ Consequently, we used the following performance indices:
 $$
    RMB = (1/B) \sum_b \left[ (\hat{\theta}_{bj} − \theta_j) / \theta_j \right].
 $$
-where \textcolor{red}{$B$ is the number of replications,}  $\theta_j$ is the true parameter value in condition $j$ and $\hat{\theta}_{bj}$ is the estimated value in the $b$ replication for condition $j$.
+where \textcolor{red}{$B$ is the number of replications,}  $\theta_j$ is the true parameter value (i.e. the target effect size) in condition $j$ and $\hat{\theta}_{bj}$ is the estimated value in the $b$ replication for condition $j$.
 Because this ratio expresses error relative to the magnitude of the true parameter, it produces a scale-free measure of systematic distortion. Values close to zero indicate negligible bias, and values within the $\pm 0.10$ interval are typically interpreted as acceptable. Whenever the true value $\theta_j$ equals zero, a small constant $(\epsilon = 10^{-6})$ is substituted to prevent undefined divisions, ensuring numerical stability across replications.
 
  - *Normalized root mean square error* (NRMSE) extends this scale-free approach to overall estimation error. It is simply derived from the Root Mean Square Error (RMSE) index dividing it by the empirical range of observed estimates,
@@ -501,10 +544,10 @@ $$
 $$
 \mathrm{RMSE}=\sqrt{\frac{1}{B}\sum_{b=1}^{B}\left(\hat{\theta}_{bj}-\theta_j\right)^2},
 $$
-\textcolor{red}{where $B$ is the number of replications, $\hat{\theta}_{bj}$ is the estimate in replication $b$ under condition $j$, and $\theta_j$ is the corresponding true value.} As with RMB, lower values indicate better performance.
+\textcolor{red}{where $B$ is the number of replications, $\hat{\theta}_{bj}$ is the estimate in replication $b$ under condition $j$, and $\theta_j$ is the corresponding true value of the effect size.} As with RMB, lower values indicate better performance.
 
 
-\textcolor{red}{ - *Coverage* evaluates whether the inferential procedure is properly calibrated. For each condition $j$ and each replicate, we compute a two-sided 95\% confidence interval (CI) for the target parameter $\theta_j$ and record whether it contains the corresponding true value. Empirical coverage is then the proportion of replicates for which $\theta_j \in \mathrm{CI}$. In our implementation, CIs for Cohen's $d$ are obtained from \texttt{effectsize::cohens\_d}. For the nonparametric overlap $\eta$, we use a percentile bootstrap CI based on \texttt{overlapping::boot.overlap} with $B=200$ resamples, taking the $2.5^{th}$ and $97.5^{th}$ percentiles of the bootstrap distribution. For CLES and the parametric overlap, both defined as deterministic transformations of $d$, confidence intervals are obtained by applying the respective transformation to the lower and upper bounds of the 95\% CI for $d$. Specifically, with $[d_{\text{low}}, d_{\text{high}}]$ denoting the CI for $d$, the CI for CLES, defined as $\mathrm{CLES}=\Phi(|d|/\sqrt{2})$, is obtained by evaluating this expression at $d_{\text{low}}$ and $d_{\text{high}}$. Likewise, for the parametric overlap $\eta_p = 2\Phi(-|d|/2)$, the interval is obtained by evaluating the same function at the CI bounds of $d$ (with endpoints ordered appropriately due to monotonicity).}
+- \textcolor{red}{ *Coverage* evaluates whether the inferential procedure is properly calibrated. For each condition $j$ and each replicate, we compute 95\% confidence interval (CI) for the target effect size parameter $\theta_j$ and record whether it contains the corresponding true value. Empirical coverage is then the proportion of replicates for which $\theta_j \in \mathrm{CI}$. In our implementation, 95% CIs for Cohen's $d$ are obtained using the noncentrality parameter method. For the nonparametric overlap $\eta$, we use a percentile bootstrap CI, taking the $2.5^{th}$ and $97.5^{th}$ percentiles of the bootstrap distribution. For CLES and the parametric overlap, both defined as deterministic transformations of $d$, confidence intervals are obtained by applying the respective transformation to the lower and upper bounds of the 95\% CI for $d$. Specifically, with $[d_{\text{low}}, d_{\text{high}}]$ denoting the CI for $d$, the CI for CLES, defined as $\mathrm{CLES}=\Phi(|d|/\sqrt{2})$, is obtained by evaluating this expression at $d_{\text{low}}$ and $d_{\text{high}}$. Likewise, for the parametric overlap $\eta_p = 2\Phi(-|d|/2)$, the interval is obtained by evaluating the same function at the CI bounds of $d$ (with endpoints ordered appropriately due to monotonicity).}
 
 
 Note that, other traditional indices such as Absolute Mean Bias, Mean Square Error, and RMSE are less suitable in this context because they remain scale-dependent. The relative and normalized metrics above resolve this limitation by expressing accuracy on a common proportional scale.
@@ -519,94 +562,42 @@ ALL$true_cles <- true_CLES( ALL$true_d )
 
 ## Descriptive statistics
 
-In @fig-correlations reports the pairwise correlations among the four effect size indices considered in the study (Cohen’s $d$, CLES, $\eta_p$, and $\eta$) across all `r nrow(DESIGN)` simulated conditions. The diagonal panels display the univariate distribution of each index, whereas the off-diagonal panels present the scatter plot (under the diagonal) and pairwise correlation coefficients (above the diagonal); different colors represent different sample sizes (n = 10, 50, 100, 300, 500, 1000). 
+In @fig-correlations reports the pairwise Pearson's correlations among the four effect size indices considered in the study (Cohen’s $d$, CLES, $\eta_p$, and $\eta$) across all `r nrow(DESIGN)` simulated conditions.
 
 ```{r, dev=DEV}
 #| echo: false
 #| fig-width: 6
 #| fig-height: 5
 #| label: fig-correlations
-#| fig-cap: Pairwise relationship between indexes. The diagonal panels show the distribution of each index individually, while the off-diagonal panels show the scatter plot (below the diagonal) and the correlation coefficients (above the diagonal). Different colours represent different sample sizes. 
+#| fig-cap: "Pairwise Pearson's correlation between indexes. $d$ = Cohen's $d$, CL = Common Language Effect Size, $\\eta_p$ = paranetric overlap, $\\eta$ = nonparametric overlap "
 
-R <- cor( ALL[, c(  "Cohens_d", "Cles", "OV", "eta1" ) ] )
+options(digits = 10)
 
-TITLE <- LETTERS[1:16]; k <- 1
-SIZE <- 9.5
-UNIT <- c(0, 0.2, 0, 0)
-GGR <- ALL[, c(  "Cohens_d", "Cles", "OV", "eta1", "n" ) ]
-GGR$n <- factor(GGR$n) 
-GGR_titles <- c(expression(d),"CL", expression(eta[p]), expression(eta), "n" )  
-ii <- 1:nrow(GGR)
+# correlation
+RR <- cor(ALL[, c("Cohens_d", "Cles", "OV", "eta1")])
 
-theme_set(theme_minimal())
-GGlist <- list()
-for ( i in 1:4 ) {
-  for (j in 1:4 ) {
-    
-    cat( "i = ", i, ";j = ", j,";k = ", k,"; ",TITLE[k], "\n" )
-    GGR$x <- GGR[,i]
-    GGR$y <- GGR[,j]
-    
-    if (i == j) { # density
-      Y <- stack( GGR[,c(i,j)] )
-      Y$n <- GGR$n
-      GG <- ggplot(Y, aes( values, fill = n, color = n )) +
-        geom_density( alpha = .3 ) + 
-        guides( fill = "none", color = "none") +
-        xlab("") + ylab("") +
-        theme(text = element_text(family = "Times", size = SIZE),plot.margin = unit(UNIT, "cm"))
-    }
+# keys in the matrix (characters)
+labs_chr <- c("Cohens_d", "Cles", "OV", "eta1")
 
-    if (i > j) { # scatterplot
-      Y <- GGR[ii,c("x","y")]
-      GG <- ggplot(GGR,aes(y,x,color = n)) +
-        geom_point() + 
-        guides( fill = "none", color = "none") +
-       xlab("") + ylab("") +
-        theme(text = element_text(family = "Times", size = SIZE),plot.margin = unit(UNIT, "cm"))
-    }
-
-    if ((i < j)&(j != 4)) { # vuoto
-       GG <- ggplot() + 
-       geom_text( aes( x = 0, y = 0 ), label = round(R[i,j],3)) + xlab("") + ylab("") +
-       scale_y_continuous( labels = NULL )  +
-         scale_x_continuous( labels = NULL )  +
-        theme(text = element_text(family = "Times", size = SIZE),plot.margin = unit(UNIT, "cm"))
-    }
-
-    if ((i < j)&(j == 4)) { # vuoto
-      GG <- ggplot() + 
-        geom_text( aes( x = 0, y = 0 ), label = round(R[i,j],3)) + xlab("") + ylab("") +
-        scale_x_continuous( labels = NULL ) +
-       scale_y_continuous(  labels = NULL, sec.axis = sec_axis(~., name = GGR_titles[i], labels = NULL) )
-    }
-
-    if (i==1) {
-      GG <- GG + ggtitle( GGR_titles[k] ) +
-        theme( plot.title = element_text( hjust = .5, family = "Times", size = SIZE ) )
-    }
-    
-    if ((j == 4)&(i == 4)) {
-      GG <- GG +
-        scale_y_continuous(sec.axis = sec_axis(~., name = GGR_titles[i], labels = NULL), labels = NULL ) +
-        theme(text = element_text(family = "Times"))
-    }
-
-    GGlist <- c( GGlist, list( GG ) )
-    k <- k+1
-    
-  }    
-}
+# expressions to DISPLAY (must be in the same order as labs_chr)
+labs_expr <- c(
+  expression(d),
+  expression(CL),
+  expression(eta[p]),
+  expression(eta)  
+)
+names(labs_expr) <- labs_chr
 
 
-plot_grid( plotlist = GGlist  )
+
+plot_correlation(RR, textsize = 13, angle = 0, values = TRUE, corrsize = 3.5,
+                 U = c(-2,0,-3,-.5), legendsize = 11)
+
 
 
 ```
 
-
-
-The @fig-correlations have a very clear pattern, with Cohen's $d$, CLES and $\eta_p$ showing very high correlations between each other, consistently exceeding 0.95 with more than 50 observations and approaching 0.99 for larger sample sizes. In contrast, $\eta$ has only moderate correlation with those three indexes, ranging between 0.40 and 0.50, suggesting that $\eta$ reflects a more distinct component of the data. Taken together, these findings indicate that Cohen's $d$, CLES and $\eta_p$ capture highly overlapping information about group differences, while $\eta$ provides a partially independent characterization of the effect, in line with the nature of the effect size that takes into consideration the shape of the distribution.
+The @fig-correlations have a very clear pattern, with Cohen's $d$, CLES and $\eta_p$ showing very high correlations between each other, exceeding 0.90. In contrast, $\eta$ has only moderate correlation with those three indexes, ranging from 0.43 to 0.58, suggesting that $\eta$ reflects a more distinct component of the data. Taken together, these findings indicate that Cohen's $d$, CLES and $\eta_p$ capture highly overlapping information about group differences, while $\eta$ provides a partially independent characterization of the effect, in line with the nature of the effect size that takes into consideration the shape of the distribution.
 
 ## Performance Indexes
 
@@ -901,7 +892,7 @@ In practical use, $\eta$ relies on kernel-based density estimation, which smooth
 
 At last, Cohen's $d$ is confirmed to be a robust tool to asses groups/conditions differences based on means. However, $\eta$, rather than standardized mean differences, quantifies shared mass between empirical densities, thereby capturing distributional aspects ignored by $d$-based measures. Simulation evidence confirms that $\eta$ remains unbiased even under strong variance heterogeneity (ratios of 3:1 or 4:1), unlike $\eta_p$ and CLES, whose estimates become distorted under such violations [@Skidmore:2013]. 
 
-\textcolor{red}{As already noted, these distributional issues are not merely theoretical but arise frequently in substantive areas of psychological research. The present results are therefore especially relevant for cognitive psychology and neuropsychology, where reaction-time (RT) measures are commonly right-skewed and long-tailed [@Osmon:2018], and for clinical psychology, where symptom variables often exhibit floor effects in non-clinical samples and heavy right tails in clinical populations [@RubioAparicio:2018; @Haqiqatkhah:2023]. In these settings, Cohen’s $d$ remains a meaningful summary of mean separation and, in our simulations, it continues to recover the location shift reliably across conditions. However, the same results also highlight that mean-based indices alone may provide an incomplete description of group differences when distributions diverge in shape or dispersion. In particular, $\eta$ summarizes distributional similarity directly and can therefore capture differences that are not reducible to a standardized mean contrast, including cases in which group means are similar but the distributions differ in skewness, tail behavior, or heterogeneity of variance. The complementary use of $\eta$ becomes practically important when asymmetric dispersion inflates pooled variance, a mechanism that can attenuate standardized mean differences and related $d$-based indices under non-normality and heteroscedasticity [@Sun:2020]. In such cases, reporting both a mean-based index (e.g., $d$ or a related transformation) and $\eta$ provides a balanced inferential summary: $d$ anchors interpretation to location shifts that remain central for many research questions, whereas $\eta$ adds information about the extent of distributional overlap that is directly tied to differences in the overall configuration of the data [@Hanel:2019].}
+\textcolor{red}{As already noted, these distributional issues are not merely theoretical but arise frequently in substantive areas of psychological research. The present results are therefore especially relevant for cognitive psychology and neuropsychology, where reaction-time (RT) measures are commonly right-skewed and long-tailed }[@Osmon:2018], \textcolor{red}{and for clinical psychology, where symptom variables often exhibit floor effects in non-clinical samples and heavy right tails in clinical populations} [@RubioAparicio:2018; @Haqiqatkhah:2023].\textcolor{red}{ In these settings, Cohen’s $d$ remains a meaningful summary of mean separation and, in our simulations, it continues to recover the location shift reliably across conditions. However, the same results also highlight that mean-based indices alone may provide an incomplete description of group differences when distributions diverge in shape or dispersion. In particular, $\eta$ summarizes distributional similarity directly and can therefore capture differences that are not reducible to a standardized mean contrast, including cases in which group means are similar but the distributions differ in skewness, tail behavior, or heterogeneity of variance. The complementary use of $\eta$ becomes practically important when asymmetric dispersion inflates pooled variance, a mechanism that can attenuate standardized mean differences and related $d$-based indices under non-normality and heteroscedasticity} [@Sun:2020]. \textcolor{red}{In such cases, reporting both a mean-based index (e.g., $d$ or a related transformation) and $\eta$ provides a balanced inferential summary: $d$ anchors interpretation to location shifts that remain central for many research questions, whereas $\eta$ adds information about the extent of distributional overlap that is directly tied to differences in the overall configuration of the data} [@Hanel:2019].
 
 \textcolor{red}{More practically, we recommend that researchers follow a simple set of steps when choosing between mean-based and overlap-based effect sizes. First, visualize the data (i.e. density/violin plots) and compute basic descriptive statistics (mean, median, variance, skewness, and kurtosis). Second, use this information to decide how to summarize group differences. When the distributions are clearly non-normal or differ in shape (e.g., skewness, tail behavior) and a mean-based index would miss substantively relevant dissimilarities, reporting the overlap index $\eta$ provides a distribution-sensitive summary. When the research question still centers on mean separation (or comparability with prior work), reporting Cohen’s $d$ together with $\eta$ can offer a clearer picture by combining a location-based effect size with a distribution-based measure of similarity. Finally, when distributions are approximately symmetric and variances are comparable and the scientific focus is a location shift, Cohen’s $d$ alone may be sufficient. In all cases, we recommend reporting uncertainty (95\% CIs), using standard analytic intervals for $d$ and bootstrap-based intervals for $\eta$.}
 

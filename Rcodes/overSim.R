@@ -2,15 +2,13 @@
 rm(list = ls())
 set.seed(1)
 
-setwd("/mnt/data/users/massimiliano.pastore")
-#setwd("/home/cox/MEGA/lavori/overlapping/")
-setwd("/home/definetti/MEGA/lavori/overlapping/")
-datadir <- "data/"
+setwd("") ## Insert your working directory where you need to have a "data" folder
+datadir <- "data/" ## Here the simulation output will be saved
 
 ## +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ## Simulation parameters
-B <- 2000
-N_boot <- 500
+B <- 2000 # Number of iterations
+N_boot <- 500 # Number of iterations for bootstrapping   
 LEVEL <- .95 # confidence level
 PROBS <- c( (1-LEVEL)/2,1-(1-LEVEL)/2 )
 PARlist <- list(
@@ -68,45 +66,45 @@ true_cohen <- function( mu1, mu2, sigma1, sigma2 ) {
 
 ##
 relative_mean_bias <- function(theta, true_theta, eps = 1e-6, use_abs_for_zero = TRUE) {
-  # theta: valori stimati
-  # true_theta: valori veri
-  # eps: piccolo valore per evitare divisione per zero
-  # use_abs_for_zero: se TRUE, quando true_theta=0 ritorna il bias assoluto
+  # theta: estimated values
+  # true_theta: true values of effect size
+  # eps: small value to avoid deviding by zero
+  # use_abs_for_zero: if TRUE, when true_theta=0 returns absolute bias
   
   bias <- theta - true_theta
   
   rmb <- ifelse(
     true_theta == 0,
-    if (use_abs_for_zero) bias else bias / eps,   # gestione dei casi con 0
+    if (use_abs_for_zero) bias else bias / eps,   # deals with cases of zero
     bias / true_theta
   )
   
   return(rmb)
 }
 
-# Funzione per calcolare l'indice CLES e il suo intervallo di confidenza
+# Function to calculate the CLES index and it's confidence interval
 CLES_IC <- function(x1, x2, alpha = .9 ) {
-  # Calcola l'indice CLES
+  # Calculates CLES index
   n1 <- length(x1)
   n2 <- length(x2)
   
-  # Calcola il numero di confronti
+  # Calculates number of comparisons
   confronti <- sum(outer(x1, x2, ">"))
   
-  # Calcola CLES
+  # Calculates CLES
   CLES <- confronti / (n1 * n2)
   
-  # Calcola la varianza
+  # Calculates variance
   var_CLES <- (CLES * (1 - CLES)) / (n1 * n2)
   
-  # Calcola l'intervallo di confidenza
+  # Calculates the confidence interval
   Z <-  qnorm(1 - (1 - alpha) / 2) 
   errore_standard <- sqrt(var_CLES)
   
   IC_lower <- CLES - Z * errore_standard
   IC_upper <- CLES + Z * errore_standard
   
-  # Restituisce i risultati
+  # <returns the results
   return(list(CLES = CLES, IC = c(IC_lower, IC_upper)))
 }
 
@@ -131,7 +129,7 @@ core_sim <- function( DESIGN, B = 10 ) {
   omega <- DESIGN$omega
   condition <- DESIGN$K
   
-  # calcolo mu e sigma
+  # calculates mu and sigma
   MUSI <- snpar(xi = delta, omega = omega, alpha = alpha)
   
   cat( paste0( "condition ",condition, ": n = ",n,"; mu = ",round(MUSI$mu,1), 
