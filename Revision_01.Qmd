@@ -45,12 +45,10 @@ opts_chunk$set(fig.width=3,fig.height=3,echo=TRUE,fig.lp="fig:",fig.align='cente
 rm(list=ls())
 INIZIO <- Sys.time()
 # +++++++++++++++++++++++++++++++++
-#main <- getwd()
-#main <- "~/lavori/overlapping/"
-main <- "/Users/ambraperugini/Documents/Work/projects/OverlappingES/"
+main <- getwd()
 
 if (grepl("cox",Sys.info()["user"])) main <- gsub("~","~/MEGA",main)
-datadir <- paste(main,"data/",sep="")
+datadir <- paste(main,"/data/",sep="")
 Rdir <- paste(main,"Rcodes/",sep="")
 # KUtils::pulizia(paste(main,"frontiers/knitr/",sep=""),c("Rnw","bib","Qmd","html","csl","pdf")) 
 esegui <- FALSE
