@@ -18,6 +18,7 @@ keywords:
 word-count: true  
 format: 
   pdf:
+    documentclass: article
     papersize: a4
     fontsize: 12pt
     margin-left: 1in   # Adjust margins for binding
@@ -26,6 +27,12 @@ format:
     number-sections: true
     colorlinks: true    
     fontfamily: times
+    format:
+    dev: cairo_pdf
+    fig-format: png
+    include-in-header:
+      text: |
+        \usepackage{xcolor}
 editor: source
 self-contained: true
 bibliography: overlapping.bib
@@ -34,9 +41,14 @@ csl: apa.csl
 
 
 ```{r,echo=FALSE,warning=FALSE}
+options(tikzLatexPackages = c(
+  getOption("tikzLatexPackages"),
+  "\\usepackage[utf8]{inputenc}",
+  "\\usepackage[T1]{fontenc}"
+))
 
 library(knitr)
-opts_chunk$set(fig.width=3,fig.height=3,echo=TRUE,fig.lp="fig:",fig.align='center',prompt=FALSE,comment=NA,message=FALSE,warning=FALSE,fig.pos="!t",results="hide", cache=TRUE,dev = "tikz")
+opts_chunk$set(fig.width=3,fig.height=3,echo=TRUE,fig.lp="fig:",fig.align='center',prompt=FALSE,comment=NA,message=FALSE,warning=FALSE,fig.pos="!t",results="hide", cache=TRUE,dev = "cairo_pdf")
 
 
 ```
@@ -261,7 +273,7 @@ true_CLES <- function( true_d ) {
 ```
 
 ```{r, echo=FALSE}
-load( paste0(datadir, "exp2601.rda"))
+load("exp2601.rda")
 
 DESIGN <- with( PARlist, 
               expand.grid(mu=delta_vec, sigma=sigma_vec, 
@@ -366,88 +378,45 @@ Overall, the experimental design comprises `r nrow(MUSI)` scenarios. In each sce
 
 -   $n$ = `r PARlist$n_vec`; sample size, equal in the two samples.
 
-```{r,echo=FALSE}
-label1 <- "@fig-simulation"
-if (length(TIKZplot)>0) {
- if (TIKZplot) {
-  label1 <- paste0(label1,"z")
- }}
-
-```
-
-`r label1` displays the experimental scenarios: the black curves correspond to the first population, consistently modeled as $\mathcal{SN}(0,1,0) \equiv N(0,1)$, whereas the red curves represent the second population $\mathcal{SN}(\xi,\omega,\alpha)$. The vertical dashed lines indicate the means of these second distributions and also the mean difference, $\delta$. \textcolor{red}{Here $\delta$ is the mean difference and $\sigma$ is the target SD of the second population; when $\alpha\neq0$, the skew-normal location and scale $(\xi,\omega)$ differ from the mean and standard deviation and are obtained by transforming $(\delta,\sigma,\alpha)$ using} @eq-xiomegaSN. 
+@fig-simulation displays the experimental scenarios: the black curves correspond to the first population, consistently modeled as $\mathcal{SN}(0,1,0) \equiv N(0,1)$, whereas the red curves represent the second population $\mathcal{SN}(\xi,\omega,\alpha)$. The vertical dashed lines indicate the means of these second distributions and also the mean difference, $\delta$. \textcolor{red}{Here $\delta$ is the mean difference and $\sigma$ is the target SD of the second population; when $\alpha\neq0$, the skew-normal location and scale $(\xi,\omega)$ differ from the mean and standard deviation and are obtained by transforming $(\delta,\sigma,\alpha)$ using} @eq-xiomegaSN. 
 
 
-```{r, eval=TIKZplot}
-#| echo: false
-#| fig-width: 8
-#| fig-height: 6
-#| label: fig-simulationz
-#| fig-cap: Representation of the simulation. In each panel, the black curves correspond to the first population $\mathcal{SN}(0,1,0) \equiv N(0,1)$, while the red curves correspond to the second population $\mathcal{SN}(\xi,\omega,\alpha)$.
-
-library(sn)
-library( ggplot2 )
-library( cowplot )
-
-GGlist <- list()
-
-theme_set( theme_minimal() )
-for ( j in 1:nrow(DD) ){
-  
-  gg <- ggplot() + stat_function( fun = dsn ) +
-    geom_vline(xintercept = MUSI$mu[j], lty = 3, col = "red") +
-    stat_function( fun = dsn, 
-      args = with(DD, list(xi = xi[j], omega=omega[j],alpha=alpha[j]) ), 
-      color = "red", n = 200 ) +
-    scale_x_continuous(limits = c(-6,6)) + 
-    ggtitle( paste0("$\\delta = ",MUSI$mu[j],"$, $\\sigma = ",MUSI$sigma[j],"$, $\\xi = ",round(DD$xi[j],2),"$, $\\omega = ",round(DD$omega[j],2),"$, $\\alpha = ",MUSI$alpha[j],"$") ) +
-      xlab("") + ylab("") + theme( title = element_text(size = 10)) +
-    scale_y_continuous( breaks = NULL )
-  
-  GGlist <- c( GGlist, list(gg) )
-}
-
-plot_grid( plotlist = GGlist, ncol = 2 )
-
-```
-
-```{r,eval=!TIKZplot}
-#| echo: false
-#| fig-width: 8
-#| fig-height: 6
+```{r}
 #| label: fig-simulation
-#| fig-cap: Representation of the simulation. In each panel, the black curves correspond to the first population $\mathcal{SN}(0,1,0) \equiv N(0,1)$, while the red curves correspond to the second population $\mathcal{SN}(\xi,\omega,\alpha)$.
+#| fig-cap: "Representation of the simulation. In each panel, the black curves correspond to the first population $\\mathcal{SN}(0,1,0) \\equiv N(0,1)$, while the red curves correspond to the second population $\\mathcal{SN}(\\xi,\\omega,\\alpha)$."
+#| echo: false
+#| fig-width: 8
+#| fig-height: 6
 
 library(sn)
-library( ggplot2 )
-library( cowplot )
+library(ggplot2)
+library(cowplot)
 
 GGlist <- list()
+theme_set(theme_minimal())
 
-theme_set( theme_minimal() )
-for ( j in 1:nrow(DD) ){
+for (j in 1:nrow(DD)) {
   
-  gg <- ggplot() + stat_function( fun = dsn ) +
+  gg <- ggplot() + 
+    stat_function(fun = dsn) +
     geom_vline(xintercept = MUSI$mu[j], lty = 3, col = "red") +
-    stat_function( fun = dsn, 
-      args = with(DD, list(xi = xi[j], omega=omega[j],alpha=alpha[j]) ), 
-      color = "red", n = 200 ) +
+    stat_function(fun = dsn, 
+      args = with(DD, list(xi = xi[j], omega = omega[j], alpha = alpha[j])), 
+      color = "red", n = 200) +
     scale_x_continuous(limits = c(-6,6)) + 
-    ggtitle(bquote(delta == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ ", " 
-    ~ alpha == .(MUSI$alpha[j]) ~ ", " 
-    ~ xi == .(round(DD$xi[j],2)) ~ ", " 
-    ~ omega == .(round(DD$omega[j],2)) ) ) + 
-    ylab("") + theme( title = element_text(size = 7.8)) +
-    scale_y_continuous( breaks = NULL )
+    xlab("") + ylab("") + 
+    scale_y_continuous(breaks = NULL) +
+    ggtitle(bquote(delta == .(MUSI$mu[j]) ~ ", " ~ sigma == .(MUSI$sigma[j]) ~ 
+                  ", " ~ alpha == .(MUSI$alpha[j]) ~ ", " ~ 
+                  xi == .(round(DD$xi[j],2)) ~ ", " ~ omega == .(round(DD$omega[j],2)))) +
+    theme(title = element_text(size = 7.8))
   
-  GGlist <- c( GGlist, list(gg) )
+  GGlist <- c(GGlist, list(gg))
 }
 
-plot_grid( plotlist = GGlist, ncol = 2 )
+plot_grid(plotlist = GGlist, ncol = 2)
 
 ```
-
-
 
 For each of the `r nrow(MUSI)` conditions we generated `r B` couples of independent samples and performed the analysis. On these generated data, for each combination $\delta\times\sigma\times\alpha\times n$, we computed the following effect sizes:
 
@@ -518,15 +487,14 @@ $${#eq-eta}
 
 ## Performance Indexes for comparison
 
-\textcolor{red}{In order to compare effect size estimators performance across conditions, we selected performance indices that are scale-free, that is, not sensitive to the magnitude or range of the underlying effect size. This choice is important because Cohen’s $d$ is unbounded and can take any real value, whereas the other indexes of interest are bounded between 0 and 1. As a consequence, performance measures defined on the raw scale would not be directly comparable across scenarios.} 
+\textcolor{red}{In order to compare effect size estimators performance across conditions, we selected performance indices that are scale-free, that is, not sensitive to the magnitude or range of the underlying effect size. This choice is important because Cohen's $d$ is unbounded and can take any real value, whereas the other indexes of interest are bounded between 0 and 1. As a consequence, performance measures defined on the raw scale would not be directly comparable across scenarios.}
 
-\textcolor{red}{For each condition $j=(\delta,\sigma,\alpha,n)$, each effect size targets its own population quantity $\theta_j$, computed from the known data-generating distributions. Specifically, Cohen's $d$ targets the standardized mean difference as reported in} @eq-d, \textcolor{red}{computed from  the population means and standard deviations where $\mu_1 = 0$ and $\sigma_1^2 = 1$ and $\mu_2$ and $\sigma_2^2$ are the combinations described in @fig-simulationz. The parametric CLES and parametric overlap are deterministic functions of $d_j$.}
+\textcolor{red}{In contrast, the nonparametric overlap index targets the distributional overlap $\eta_j=\int_{\mathbb{R}^n}  \min [f_1 (x),f_2 (x)] dx$ where $f_1$ is the $\mathcal{N}(0,1)$ density and $f_2$ is the skew-normal density under condition $j$. Performance indices (RMB, NRMSE, Coverage) therefore quantify how well each estimator recovers its own $\theta_j$ across Monte Carlo replications.}
 
-\textcolor{red}{In contrast, the nonparametric overlap index targets the distributional overlap $\eta_j=\int_{\mathbb{R}^n}  min [f_1 (x),f_2 (x)] dx$ where $f_1$ is the $\mathcal{N}(0,1)$ density and $f_2$ is the skew-normal density under condition $j$. Performance indices (RMB, NRMSE, Coverage) therefore quantify how well each estimator recovers its own $\theta_j$ across Monte Carlo replications.}
 
 Consequently, we used the following performance indices:
 
- - *Relative mean bias* (RMB) captures the average proportional deviation between an estimator and its population value across Monte Carlo replications. It is defined as
+ - **Relative mean bias** (RMB) captures the average proportional deviation between an estimator and its population value across Monte Carlo replications. It is defined as
 $$
    RMB = (1/B) \sum_b \left[ (\hat{\theta}_{bj} − \theta_j) / \theta_j \right].
 $$
@@ -545,9 +513,10 @@ $$
 $$
 \textcolor{red}{where $B$ is the number of replications, $\hat{\theta}_{bj}$ is the estimate in replication $b$ under condition $j$, and $\theta_j$ is the corresponding true value of the effect size.} As with RMB, lower values indicate better performance.
 
-
-- \textcolor{red}{ *Coverage* evaluates whether the inferential procedure is properly calibrated. For each condition $j$ and each replicate, we compute 95\% confidence interval (CI) for the target effect size parameter $\theta_j$ and record whether it contains the corresponding true value. Empirical coverage is then the proportion of replicates for which $\theta_j \in \mathrm{CI}$. In our implementation, 95% CIs for Cohen's $d$ are obtained using the noncentrality parameter method. For the nonparametric overlap $\eta$, we use a percentile bootstrap CI, taking the $2.5^{th}$ and $97.5^{th}$ percentiles of the bootstrap distribution. For CLES and the parametric overlap, both defined as deterministic transformations of $d$, confidence intervals are obtained by applying the respective transformation to the lower and upper bounds of the 95\% CI for $d$. Specifically, with $[d_{\text{low}}, d_{\text{high}}]$ denoting the CI for $d$, the CI for CLES, defined as $\mathrm{CLES}=\Phi(|d|/\sqrt{2})$, is obtained by evaluating this expression at $d_{\text{low}}$ and $d_{\text{high}}$. Likewise, for the parametric overlap $\eta_p = 2\Phi(-|d|/2)$, the interval is obtained by evaluating the same function at the CI bounds of $d$ (with endpoints ordered appropriately due to monotonicity).}
-
+- **Coverage** 
+\begingroup\color{red}
+evaluates whether the inferential procedure is properly calibrated. For each condition $j$ and each replicate, we compute 95\% confidence interval (CI) for the target effect size parameter $\theta_j$ and record whether it contains the corresponding true value. Empirical coverage is then the proportion of replicates for which $\theta_j \in \mathrm{CI}$. In our implementation, 95\% CIs for Cohen's $d$ are obtained using the noncentrality parameter method. For the nonparametric overlap $\eta$, we use a percentile bootstrap CI, taking the $2.5^{th}$ and $97.5^{th}$ percentiles of the bootstrap distribution. For CLES and the parametric overlap, both defined as deterministic transformations of $d$, confidence intervals are obtained by applying the respective transformation to the lower and upper bounds of the 95\% CI for $d$. Specifically, with $[d_{\text{low}}, d_{\text{high}}]$ denoting the CI for $d$, the CI for CLES, defined as $\mathrm{CLES}=\Phi(|d|/\sqrt{2})$, is obtained by evaluating this expression at $d_{\text{low}}$ and $d_{\text{high}}$. Likewise, for the parametric overlap $\eta_p = 2\Phi(-|d|/2)$, the interval is obtained by evaluating the same function at the CI bounds of $d$ (with endpoints ordered appropriately due to monotonicity). Consequently, we used the following performance indices:
+\endgroup
 
 Note that, other traditional indices such as Absolute Mean Bias, Mean Square Error, and RMSE are less suitable in this context because they remain scale-dependent. The relative and normalized metrics above resolve this limitation by expressing accuracy on a common proportional scale.
 
@@ -565,8 +534,8 @@ In @fig-correlations reports the pairwise Pearson's correlations among the four 
 
 ```{r, dev=DEV}
 #| echo: false
-#| fig-width: 6
-#| fig-height: 5
+#| fig-width: 3
+#| fig-height: 2
 #| label: fig-correlations
 #| fig-cap: "Pairwise Pearson's correlation between indexes. $d$ = Cohen's $d$, CL = Common Language Effect Size, $\\eta_p$ = paranetric overlap, $\\eta$ = nonparametric overlap "
 
