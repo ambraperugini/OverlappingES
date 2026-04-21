@@ -5,6 +5,7 @@ Repository accompanying the paper:
 > *Perugini, A., Calignano, G., & Pastore, M. (2026)*  
 > **Not normal: a simulation study comparing effect sizes for skewed psychological data**  
 > Frontiers in Psychology
+> https://doi.org/10.3389/fpsyg.2026.1771029
 
 ---
 
