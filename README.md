@@ -27,23 +27,37 @@ The project investigates how different **effect size indices behave under non-no
 
 
 OverlappingES/
+
 │
+
 ├── Rcodes/ # Core R scripts for simulations and analysis
+
 ├── data/ # Data used/generated in the study
+
 ├── knitr/ # Reproducible report components (R Markdown / Quarto)
+
 ├── Submission figures/ # Figures included in the manuscript
+
 │
+
 ├── fpsyg-17-1771029.pdf # Published paper
+
 ├── Revision_001.pdf # Revision document
+
 ├── Revision_001.Qmd # Source for revision
+
 ├── Comments_to_Reviewers.qmd
+
 │
+
 ├── overlapping.bib # Bibliography
+
 ├── apa.csl # Citation style
+
 ├── license.txt # CC BY 4.0 license
+
 ├── README.md
 └── .gitignore
-
 
 ---
 
