@@ -173,5 +173,3 @@ This is research-oriented code:
 - Not optimized for production  
 - Designed for methodological transparency  
 - Focused on reproducibility and statistical validation
-- Designed for methodological transparency  
-- Focused on reproducibility and statistical validation
